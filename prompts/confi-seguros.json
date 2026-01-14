@@ -1,0 +1,73 @@
+{
+  "marca": "Confi Seguros",
+  "paleta": ["#ffce0a", "#ffffff", "#000000"],
+  "regrasGerais": [
+    "Transmitir segurança, tranquilidade e proteção",
+    "Nunca usar linguagem agressiva ou promocional exagerada",
+    "Manter estética clean, moderna e confiável",
+    "Não utilizar linhas gráficas atravessando o layout",
+    "Não alterar a identidade visual"
+  ],
+  "produtos": {
+    "geral": {
+      "layoutBase": "confi-seguros-geral-v1",
+      "imagem": {
+        "descricaoPermitida": [
+          "Pessoa jovem relaxada em ambiente aconchegante",
+          "Grupo de amigos ao ar livre em clima acolhedor",
+          "Pessoa trabalhando no notebook em ambiente caseiro, iluminado e seguro"
+        ]
+      },
+      "textos": {
+        "fraseInstitucional": [
+          "Seu patrimônio seguro, sua",
+          "Proteção que acompanha sua vida",
+          "Segurança que traz tranquilidade"
+        ],
+        "destaque": [
+          "Tranquilidade",
+          "Segurança",
+          "Confiança"
+        ],
+        "complemento": [
+          "garantida",
+          "para você e sua família",
+          "em todos os momentos"
+        ],
+        "cta": [
+          "Entre em contato!"
+        ]
+      }
+    },
+    "residencial": {
+      "layoutBase": "confi-seguros-residencial-v1",
+      "imagem": {
+        "descricao": "Casa moderna de alto padrão, arquitetura contemporânea, iluminação quente noturna, tons neutros, transmitindo proteção e conforto familiar"
+      },
+      "textos": {
+        "titulo": [
+          "Proteja seu lar",
+          "Seu lar protegido"
+        ],
+        "subtitulo": [
+          "com um Seguro Residencial"
+        ],
+        "descricao": [
+          "Garanta segurança e proteção para sua casa e para sua família."
+        ],
+        "fraseEmocional": [
+          "Mais segurança,\nmenos preocupação.",
+          "Tranquilidade para quem você ama."
+        ],
+        "cta": [
+          "Faça uma cotação agora!"
+        ]
+      },
+      "beneficios": [
+        "proteção",
+        "assistência 24 horas",
+        "segurança"
+      ]
+    }
+  }
+}
