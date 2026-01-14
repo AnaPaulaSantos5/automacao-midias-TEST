@@ -12,67 +12,81 @@ export default function ChatBox() {
 
   const [input, setInput] = useState("");
 
-  function identificarFlyer(texto) {
+  const [flyer, setFlyer] = useState({
+    area: null,
+    tipo: null,
+    produto: null,
+    formato: null
+  });
+
+  function identificarTipo(texto) {
     const text = texto.toLowerCase();
 
     if (text.includes("consórcio") || text.includes("consorcio")) {
       return { tipo: "consórcio", area: "finanças" };
     }
 
-    if (text.includes("residencial") || text.includes("casa") || text.includes("lar")) {
-      return { tipo: "seguro residencial", area: "seguros" };
+    if (text.includes("pet")) {
+      return { tipo: "pet", area: "benefícios" };
+    }
+
+    if (text.includes("saúde") || text.includes("saude")) {
+      return { tipo: "saúde", area: "benefícios" };
+    }
+
+    if (text.includes("odonto")) {
+      return { tipo: "odonto", area: "benefícios" };
     }
 
     if (text.includes("seguro")) {
       return { tipo: "seguro", area: "seguros" };
     }
 
-    if (text.includes("odonto") || text.includes("dentista") || text.includes("sorriso")) {
-      return { tipo: "odonto", area: "benefícios" };
-    }
-
-    if (
-      text.includes("saúde") ||
-      text.includes("saude") ||
-      text.includes("médico") ||
-      text.includes("hospital")
-    ) {
-      return { tipo: "saúde", area: "benefícios" };
-    }
-
-    if (
-      text.includes("pet") ||
-      text.includes("cachorro") ||
-      text.includes("gato")
-    ) {
-      return { tipo: "pet", area: "benefícios" };
-    }
-
     return null;
+  }
+
+  function responderBot(novoFlyer) {
+    if (!novoFlyer.tipo) {
+      return "Para eu te ajudar melhor, qual tipo de flyer você deseja criar? (Seguro, Consórcio, Odonto, Saúde ou Pet)";
+    }
+
+    if (novoFlyer.tipo === "consórcio" && !novoFlyer.produto) {
+      return "Perfeito. Qual tipo de consórcio? (Auto, Imóvel ou Serviços)";
+    }
+
+    if (!novoFlyer.formato) {
+      return "Ótimo. Esse flyer será para qual formato? (Instagram ou WhatsApp)";
+    }
+
+    return "Perfeito! Já tenho todas as informações para criar seu flyer.";
   }
 
   function sendMessage() {
     if (!input.trim()) return;
 
     const userMessage = { sender: "user", text: input };
+    let novoFlyer = { ...flyer };
 
-    const resultado = identificarFlyer(input);
-
-    let botText = "";
-
-    if (!resultado) {
-      botText =
-        "Certo. Para eu te ajudar melhor, qual tipo de flyer você deseja criar? (Seguro, Consórcio, Odonto, Saúde ou Pet)";
-    } else {
-      botText = `Perfeito! Vamos criar um flyer de ${resultado.tipo} da área de ${resultado.area}.`;
+    if (!flyer.tipo) {
+      const identificacao = identificarTipo(input);
+      if (identificacao) {
+        novoFlyer.tipo = identificacao.tipo;
+        novoFlyer.area = identificacao.area;
+      }
+    } else if (flyer.tipo === "consórcio" && !flyer.produto) {
+      novoFlyer.produto = input.toLowerCase();
+    } else if (!flyer.formato) {
+      novoFlyer.formato = input.toLowerCase();
     }
+
+    setFlyer(novoFlyer);
 
     const botMessage = {
       sender: "bot",
-      text: botText
+      text: responderBot(novoFlyer)
     };
 
-    setMessages((prev) => [...prev, userMessage, botMessage]);
+    setMessages([...messages, userMessage, botMessage]);
     setInput("");
   }
 
@@ -154,5 +168,3 @@ const styles = {
     cursor: "pointer"
   }
 };
- 
-   
