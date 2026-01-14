@@ -19,6 +19,18 @@ export default function ChatBox() {
     flyerConfig: null
   });
 
+  // 👉 OBJETO FINAL DO FLYER (ETAPA 6)
+  const [flyerData, setFlyerData] = useState({
+    area: null,
+    tipo: null,
+    subtipo: null,
+    formato: null,
+    dados: {}
+  });
+
+  // 👉 CONTROLE DE ETAPAS DO CHAT
+  const [step, setStep] = useState("identificar");
+
   function identificarFlyer(texto) {
     const text = texto.toLowerCase();
 
@@ -55,8 +67,10 @@ export default function ChatBox() {
     const userMessage = { sender: "user", text: input };
     let botResponse = "";
 
-    // ETAPA: ainda não identificou o flyer
-    if (!context.tipo) {
+    // =====================
+    // ETAPA 1 — IDENTIFICAR FLYER
+    // =====================
+    if (step === "identificar") {
       const resultado = identificarFlyer(input);
 
       if (!resultado) {
@@ -78,13 +92,57 @@ export default function ChatBox() {
             flyerConfig
           });
 
-          botResponse = `Perfeito! Vamos criar um flyer de ${resultado.tipo} da área de ${resultado.area}.`;
+          setFlyerData((prev) => ({
+            ...prev,
+            area: resultado.area,
+            tipo: resultado.tipo
+          }));
+
+          if (resultado.tipo === "consorcio") {
+            botResponse =
+              "Perfeito. Qual tipo de consórcio? (Auto, Imóvel ou Serviços)";
+            setStep("subtipo");
+          } else {
+            botResponse =
+              "Ótimo. Esse flyer será para qual formato? (Instagram ou WhatsApp)";
+            setStep("formato");
+          }
         }
       }
-    } else {
-      // Próximas etapas (ainda não implementadas)
+    }
+
+    // =====================
+    // ETAPA 2 — SUBTIPO (CONSÓRCIO)
+    // =====================
+    else if (step === "subtipo") {
+      setFlyerData((prev) => ({
+        ...prev,
+        subtipo: input.toLowerCase()
+      }));
+
       botResponse =
-        "Perfeito. Em breve vou te fazer algumas perguntas para montar esse flyer corretamente.";
+        "Ótimo. Esse flyer será para qual formato? (Instagram ou WhatsApp)";
+      setStep("formato");
+    }
+
+    // =====================
+    // ETAPA 3 — FORMATO
+    // =====================
+    else if (step === "formato") {
+      setFlyerData((prev) => ({
+        ...prev,
+        formato: input.toLowerCase()
+      }));
+
+      botResponse = "Perfeito! Já tenho todas as informações para criar seu flyer.";
+
+      setStep("final");
+
+      // 🔍 VISUALIZAÇÃO DO RESULTADO FINAL
+      console.log("FLYER FINAL:", {
+        ...flyerData,
+        formato: input.toLowerCase()
+      });
     }
 
     setMessages((prev) => [
