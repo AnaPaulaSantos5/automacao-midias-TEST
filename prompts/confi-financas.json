@@ -1,0 +1,48 @@
+{
+  "marca": "Confi Finanças",
+  "paleta": ["#1260c7", "#ffffff", "#000000"],
+  "regrasGerais": [
+    "Comunicação clara, objetiva e profissional",
+    "Não utilizar linguagem emocional excessiva",
+    "Foco em credibilidade e clareza de condições",
+    "Layout organizado e informativo"
+  ],
+  "produtos": {
+    "consorcio": {
+      "layoutBase": "confi-financas-consorcio-v1",
+      "imagem": {
+        "imovel": "Casa moderna ao entardecer, tons neutros, estética premium",
+        "carro": "Carro simples e atual em estrada, cenário com casas ao fundo",
+        "pesados": "Caminhão em estrada rodeada por árvores"
+      },
+      "textos": {
+        "titulo": [
+          "Consórcio Imóvel",
+          "Consórcio de Veículos",
+          "Consórcio de Pesados"
+        ],
+        "subtitulo": [
+          "200 meses",
+          "180 meses",
+          "160 meses"
+        ],
+        "destaqueCampanha": [
+          "Parcelas 40%",
+          "Parcelas reduzidas"
+        ],
+        "descricaoCampanha": [
+          "Menores até a contemplação"
+        ]
+      },
+      "tabela": {
+        "colunas": [
+          "Crédito",
+          "Taxa Adm",
+          "Parcela Pessoa Física",
+          "Parcela Pessoa Jurídica"
+        ]
+      },
+      "rodapeLegal": "Taxa adm antecipada diluída no plano. Fundo de Reserva de 2% e Seguro Prestamista conforme regulamento vigente."
+    }
+  }
+}
