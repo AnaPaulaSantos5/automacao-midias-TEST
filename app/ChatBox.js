@@ -19,7 +19,6 @@ export default function ChatBox() {
     flyerConfig: null
   });
 
-  // 👉 OBJETO FINAL DO FLYER (ETAPA 6)
   const [flyerData, setFlyerData] = useState({
     area: null,
     tipo: null,
@@ -28,7 +27,6 @@ export default function ChatBox() {
     dados: {}
   });
 
-  // 👉 CONTROLE DE ETAPAS DO CHAT
   const [step, setStep] = useState("identificar");
 
   function identificarFlyer(texto) {
@@ -37,23 +35,18 @@ export default function ChatBox() {
     if (text.includes("consórcio") || text.includes("consorcio")) {
       return { area: "financas", tipo: "consorcio" };
     }
-
     if (text.includes("pet")) {
       return { area: "beneficios", tipo: "pet" };
     }
-
     if (text.includes("saúde") || text.includes("saude")) {
       return { area: "beneficios", tipo: "saude" };
     }
-
     if (text.includes("odonto")) {
       return { area: "beneficios", tipo: "odonto" };
     }
-
     if (text.includes("seguro")) {
       return { area: "seguros", tipo: "seguro" };
     }
-
     return null;
   }
 
@@ -67,9 +60,7 @@ export default function ChatBox() {
     const userMessage = { sender: "user", text: input };
     let botResponse = "";
 
-    // =====================
-    // ETAPA 1 — IDENTIFICAR FLYER
-    // =====================
+    // ETAPA 1 — IDENTIFICAR
     if (step === "identificar") {
       const resultado = identificarFlyer(input);
 
@@ -77,43 +68,33 @@ export default function ChatBox() {
         botResponse =
           "Certo. Para eu te ajudar melhor, qual tipo de flyer você deseja criar? (Seguro, Consórcio, Odonto, Saúde ou Pet)";
       } else {
-        const flyerConfig = obterFlyerConfig(
-          resultado.area,
-          resultado.tipo
-        );
+        const flyerConfig = obterFlyerConfig(resultado.area, resultado.tipo);
 
-        if (!flyerConfig) {
+        setContext({
+          area: resultado.area,
+          tipo: resultado.tipo,
+          flyerConfig
+        });
+
+        setFlyerData((prev) => ({
+          ...prev,
+          area: resultado.area,
+          tipo: resultado.tipo
+        }));
+
+        if (resultado.tipo === "consorcio") {
           botResponse =
-            "Identifiquei o tipo de flyer, mas ele ainda não está configurado no sistema.";
+            "Perfeito. Qual tipo de consórcio? (Auto, Imóvel ou Serviços)";
+          setStep("subtipo");
         } else {
-          setContext({
-            area: resultado.area,
-            tipo: resultado.tipo,
-            flyerConfig
-          });
-
-          setFlyerData((prev) => ({
-            ...prev,
-            area: resultado.area,
-            tipo: resultado.tipo
-          }));
-
-          if (resultado.tipo === "consorcio") {
-            botResponse =
-              "Perfeito. Qual tipo de consórcio? (Auto, Imóvel ou Serviços)";
-            setStep("subtipo");
-          } else {
-            botResponse =
-              "Ótimo. Esse flyer será para qual formato? (Instagram ou WhatsApp)";
-            setStep("formato");
-          }
+          botResponse =
+            "Ótimo. Esse flyer será para qual formato? (Instagram ou WhatsApp)";
+          setStep("formato");
         }
       }
     }
 
-    // =====================
-    // ETAPA 2 — SUBTIPO (CONSÓRCIO)
-    // =====================
+    // ETAPA 2 — SUBTIPO CONSÓRCIO
     else if (step === "subtipo") {
       setFlyerData((prev) => ({
         ...prev,
@@ -125,24 +106,50 @@ export default function ChatBox() {
       setStep("formato");
     }
 
-    // =====================
     // ETAPA 3 — FORMATO
-    // =====================
     else if (step === "formato") {
       setFlyerData((prev) => ({
         ...prev,
         formato: input.toLowerCase()
       }));
 
-      botResponse = "Perfeito! Já tenho todas as informações para criar seu flyer.";
+      botResponse =
+        "Perfeito. Agora vamos definir a campanha do consórcio. Qual campanha você deseja usar? (Parcelas reduzidas, Lance embutido ou Padrão)";
+      setStep("campanha");
+    }
 
-      setStep("final");
+    // =====================
+    // ETAPA 7 — CAMPANHA
+    // =====================
+    else if (step === "campanha") {
+      setFlyerData((prev) => ({
+        ...prev,
+        dados: {
+          ...prev.dados,
+          campanha: input
+        }
+      }));
 
-      // 🔍 VISUALIZAÇÃO DO RESULTADO FINAL
-      console.log("FLYER FINAL:", {
-        ...flyerData,
-        formato: input.toLowerCase()
-      });
+      botResponse =
+        "Perfeito. Esse consórcio será de quantos meses? (ex: 180 ou 200)";
+      setStep("meses");
+    }
+
+    // ETAPA 8 (preparada, ainda sem tabela)
+    else if (step === "meses") {
+      setFlyerData((prev) => ({
+        ...prev,
+        dados: {
+          ...prev.dados,
+          meses: input
+        }
+      }));
+
+      botResponse =
+        "Ótimo. Na próxima etapa vamos montar a tabela do consórcio linha por linha.";
+      setStep("tabela");
+
+      console.log("FLYER DATA ATUAL:", flyerData);
     }
 
     setMessages((prev) => [
