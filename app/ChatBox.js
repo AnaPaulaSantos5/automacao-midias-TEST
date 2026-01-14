@@ -13,21 +13,15 @@ export default function ChatBox() {
 
   const [input, setInput] = useState("");
 
-  const [context, setContext] = useState({
-    area: null,
-    tipo: null,
-    flyerConfig: null
-  });
+  const [step, setStep] = useState("identificar");
 
   const [flyerData, setFlyerData] = useState({
     area: null,
     tipo: null,
     subtipo: null,
     formato: null,
-    dados: {}
+    campanha: null
   });
-
-  const [step, setStep] = useState("identificar");
 
   function identificarFlyer(texto) {
     const text = texto.toLowerCase();
@@ -50,17 +44,13 @@ export default function ChatBox() {
     return null;
   }
 
-  function obterFlyerConfig(area, tipo) {
-    return flyersBase?.[area]?.[tipo] || null;
-  }
-
   function sendMessage() {
     if (!input.trim()) return;
 
     const userMessage = { sender: "user", text: input };
     let botResponse = "";
 
-    // ETAPA 1 — IDENTIFICAR
+    // ETAPA 1 — IDENTIFICAR TIPO
     if (step === "identificar") {
       const resultado = identificarFlyer(input);
 
@@ -68,14 +58,6 @@ export default function ChatBox() {
         botResponse =
           "Certo. Para eu te ajudar melhor, qual tipo de flyer você deseja criar? (Seguro, Consórcio, Odonto, Saúde ou Pet)";
       } else {
-        const flyerConfig = obterFlyerConfig(resultado.area, resultado.tipo);
-
-        setContext({
-          area: resultado.area,
-          tipo: resultado.tipo,
-          flyerConfig
-        });
-
         setFlyerData((prev) => ({
           ...prev,
           area: resultado.area,
@@ -113,8 +95,10 @@ export default function ChatBox() {
         formato: input.toLowerCase()
       }));
 
+      // ⚠️ AQUI ESTAVA O ERRO ANTES
+      // NÃO FINALIZA — AVANÇA PARA CAMPANHA
       botResponse =
-        "Perfeito. Agora vamos definir a campanha do consórcio. Qual campanha você deseja usar? (Parcelas reduzidas, Lance embutido ou Padrão)";
+        "Perfeito. Agora vamos definir a campanha. Qual campanha você deseja usar? (Parcelas reduzidas, Lance embutido ou Padrão)";
       setStep("campanha");
     }
 
@@ -124,32 +108,14 @@ export default function ChatBox() {
     else if (step === "campanha") {
       setFlyerData((prev) => ({
         ...prev,
-        dados: {
-          ...prev.dados,
-          campanha: input
-        }
+        campanha: input
       }));
 
       botResponse =
-        "Perfeito. Esse consórcio será de quantos meses? (ex: 180 ou 200)";
-      setStep("meses");
-    }
+        "Perfeito! Já tenho todas as informações iniciais para criar seu flyer.";
+      setStep("final");
 
-    // ETAPA 8 (preparada, ainda sem tabela)
-    else if (step === "meses") {
-      setFlyerData((prev) => ({
-        ...prev,
-        dados: {
-          ...prev.dados,
-          meses: input
-        }
-      }));
-
-      botResponse =
-        "Ótimo. Na próxima etapa vamos montar a tabela do consórcio linha por linha.";
-      setStep("tabela");
-
-      console.log("FLYER DATA ATUAL:", flyerData);
+      console.log("DADOS DO FLYER:", flyerData);
     }
 
     setMessages((prev) => [
