@@ -12,7 +12,7 @@ export default function ChatBox() {
 
   const [input, setInput] = useState("");
 
-  function identificarFlyer(texto: string) {
+  function identificarFlyer(texto) {
     const text = texto.toLowerCase();
 
     if (text.includes("consórcio") || text.includes("consorcio")) {
@@ -154,3 +154,5 @@ const styles = {
     cursor: "pointer"
   }
 };
+ 
+   
