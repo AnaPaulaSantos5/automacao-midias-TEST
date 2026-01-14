@@ -1,0 +1,54 @@
+{
+  "marca": "Confi Benefícios",
+  "paleta": ["#f5886c", "#ffffff", "#000000"],
+  "regrasGerais": [
+    "Comunicação leve, acolhedora e positiva",
+    "Foco em bem-estar, cuidado e qualidade de vida",
+    "Estética moderna e amigável",
+    "Manter identidade visual coral"
+  ],
+  "produtos": {
+    "odonto": {
+      "layoutBase": "confi-beneficios-odonto-v1",
+      "textos": {
+        "headline": [
+          "Seu sorriso é seu melhor cartão de visitas!",
+          "Cuidar do seu sorriso é cuidar de você"
+        ],
+        "descricao": [
+          "Com o Seguro Odonto, você garante cuidado contínuo, prevenção e atendimento rápido quando precisar."
+        ]
+      },
+      "beneficios": [
+        "Consultas",
+        "Limpeza",
+        "Restauração",
+        "Cobertura para emergências",
+        "Tratamento de Canal",
+        "Extração do siso"
+      ]
+    },
+    "saude": {
+      "layoutBase": "confi-beneficios-saude-v1",
+      "textos": {
+        "headline": [
+          "Sua saúde em primeiro lugar!"
+        ],
+        "descricao": [
+          "Contrate agora seu Seguro Saúde e tenha acesso a consultas, exames, internações e atendimentos de urgência em uma ampla rede credenciada."
+        ]
+      }
+    },
+    "pet": {
+      "layoutBase": "confi-beneficios-pet-v1",
+      "textos": {
+        "headline": [
+          "Cuidar do seu pet ficou ainda mais fácil!"
+        ],
+        "descricao": [
+          "Com nosso Seguro Pet, você tem suporte nas horas mais importantes, com planos completos e acessíveis."
+        ]
+      }
+    }
+  }
+}
