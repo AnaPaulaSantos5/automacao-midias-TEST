@@ -98,8 +98,8 @@ export default function ChatBox() {
       // ⚠️ AQUI ESTAVA O ERRO ANTES
       // NÃO FINALIZA — AVANÇA PARA CAMPANHA
       botResponse =
-        "Perfeito. Agora vamos definir a campanha. Qual campanha você deseja usar? (Parcelas reduzidas, Lance embutido ou Padrão)";
-      setStep("campanha");
+        botResponse =
+  "ETAPA 7 ATIVA — QUAL CAMPANHA VOCÊ DESEJA USAR?";
     }
 
     // =====================
