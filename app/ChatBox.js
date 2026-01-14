@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { flyersBase } from "./flyersBase";
 
 export default function ChatBox() {
   const [messages, setMessages] = useState([
@@ -12,81 +13,86 @@ export default function ChatBox() {
 
   const [input, setInput] = useState("");
 
-  const [flyer, setFlyer] = useState({
+  const [context, setContext] = useState({
     area: null,
     tipo: null,
-    produto: null,
-    formato: null
+    flyerConfig: null
   });
 
-  function identificarTipo(texto) {
+  function identificarFlyer(texto) {
     const text = texto.toLowerCase();
 
     if (text.includes("consórcio") || text.includes("consorcio")) {
-      return { tipo: "consórcio", area: "finanças" };
+      return { area: "financas", tipo: "consorcio" };
     }
 
     if (text.includes("pet")) {
-      return { tipo: "pet", area: "benefícios" };
+      return { area: "beneficios", tipo: "pet" };
     }
 
     if (text.includes("saúde") || text.includes("saude")) {
-      return { tipo: "saúde", area: "benefícios" };
+      return { area: "beneficios", tipo: "saude" };
     }
 
     if (text.includes("odonto")) {
-      return { tipo: "odonto", area: "benefícios" };
+      return { area: "beneficios", tipo: "odonto" };
     }
 
     if (text.includes("seguro")) {
-      return { tipo: "seguro", area: "seguros" };
+      return { area: "seguros", tipo: "seguro" };
     }
 
     return null;
   }
 
-  function responderBot(novoFlyer) {
-    if (!novoFlyer.tipo) {
-      return "Para eu te ajudar melhor, qual tipo de flyer você deseja criar? (Seguro, Consórcio, Odonto, Saúde ou Pet)";
-    }
-
-    if (novoFlyer.tipo === "consórcio" && !novoFlyer.produto) {
-      return "Perfeito. Qual tipo de consórcio? (Auto, Imóvel ou Serviços)";
-    }
-
-    if (!novoFlyer.formato) {
-      return "Ótimo. Esse flyer será para qual formato? (Instagram ou WhatsApp)";
-    }
-
-    return "Perfeito! Já tenho todas as informações para criar seu flyer.";
+  function obterFlyerConfig(area, tipo) {
+    return flyersBase?.[area]?.[tipo] || null;
   }
 
   function sendMessage() {
     if (!input.trim()) return;
 
     const userMessage = { sender: "user", text: input };
-    let novoFlyer = { ...flyer };
+    let botResponse = "";
 
-    if (!flyer.tipo) {
-      const identificacao = identificarTipo(input);
-      if (identificacao) {
-        novoFlyer.tipo = identificacao.tipo;
-        novoFlyer.area = identificacao.area;
+    // ETAPA: ainda não identificou o flyer
+    if (!context.tipo) {
+      const resultado = identificarFlyer(input);
+
+      if (!resultado) {
+        botResponse =
+          "Certo. Para eu te ajudar melhor, qual tipo de flyer você deseja criar? (Seguro, Consórcio, Odonto, Saúde ou Pet)";
+      } else {
+        const flyerConfig = obterFlyerConfig(
+          resultado.area,
+          resultado.tipo
+        );
+
+        if (!flyerConfig) {
+          botResponse =
+            "Identifiquei o tipo de flyer, mas ele ainda não está configurado no sistema.";
+        } else {
+          setContext({
+            area: resultado.area,
+            tipo: resultado.tipo,
+            flyerConfig
+          });
+
+          botResponse = `Perfeito! Vamos criar um flyer de ${resultado.tipo} da área de ${resultado.area}.`;
+        }
       }
-    } else if (flyer.tipo === "consórcio" && !flyer.produto) {
-      novoFlyer.produto = input.toLowerCase();
-    } else if (!flyer.formato) {
-      novoFlyer.formato = input.toLowerCase();
+    } else {
+      // Próximas etapas (ainda não implementadas)
+      botResponse =
+        "Perfeito. Em breve vou te fazer algumas perguntas para montar esse flyer corretamente.";
     }
 
-    setFlyer(novoFlyer);
+    setMessages((prev) => [
+      ...prev,
+      userMessage,
+      { sender: "bot", text: botResponse }
+    ]);
 
-    const botMessage = {
-      sender: "bot",
-      text: responderBot(novoFlyer)
-    };
-
-    setMessages([...messages, userMessage, botMessage]);
     setInput("");
   }
 
@@ -98,7 +104,8 @@ export default function ChatBox() {
             key={index}
             style={{
               ...styles.message,
-              alignSelf: msg.sender === "user" ? "flex-end" : "flex-start",
+              alignSelf:
+                msg.sender === "user" ? "flex-end" : "flex-start",
               backgroundColor:
                 msg.sender === "user" ? "#1260c7" : "#f1f1f1",
               color: msg.sender === "user" ? "#ffffff" : "#000000"
