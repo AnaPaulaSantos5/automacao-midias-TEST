@@ -1,7 +1,11 @@
 export default function Home() {
+import ChatBox from "./components/ChatBox";
+
+export default function Home() {
   return (
-    <main style={{ background: "black", color: "white", height: "100vh" }}>
-      <h1>BUILD NOVO — TESTE DEFINITIVO</h1>
+    <main style={{ padding: 20 }}>
+      <h1>Projeto Flyer AI</h1>
+      <ChatBox />
     </main>
   );
 }
