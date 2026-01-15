@@ -1,6 +1,6 @@
 const consorcioFlyer = {
   area: "financas",
-  tipo: "consorcio",
+  produto: "consorcio",
 
   identidade: {
     marca: "Confi Finanças",
@@ -13,22 +13,18 @@ const consorcioFlyer = {
   },
 
   formatosPermitidos: {
-    instagramFeed: {
-      width: 1080,
-      height: 1080
-    },
-    instagramStory: {
-      width: 1080,
-      height: 1920
+    instagram: {
+      feed: { width: 1080, height: 1080 },
+      feedVertical: { width: 1080, height: 1350 },
+      story: { width: 1080, height: 1920 }
     },
     whatsapp: {
-      width: 1080,
-      height: 1920
+      padrao: { width: 1080, height: 1920 }
     }
   },
 
   camposObrigatorios: [
-    "produto",
+    "subtipo",          // auto | imovel | pesados
     "valorCarta",
     "prazo",
     "parcelaInicial"
