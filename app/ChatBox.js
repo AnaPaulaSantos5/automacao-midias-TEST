@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { flyersBase } from "./flyersBase";
 
 export default function ChatBox() {
   const [messages, setMessages] = useState([
@@ -12,7 +11,6 @@ export default function ChatBox() {
   ]);
 
   const [input, setInput] = useState("");
-
   const [step, setStep] = useState("identificar");
 
   const [flyerData, setFlyerData] = useState({
@@ -50,7 +48,7 @@ export default function ChatBox() {
     const userMessage = { sender: "user", text: input };
     let botResponse = "";
 
-    // ETAPA 1 — IDENTIFICAR TIPO
+    // ETAPA 1 — IDENTIFICAR
     if (step === "identificar") {
       const resultado = identificarFlyer(input);
 
@@ -76,7 +74,7 @@ export default function ChatBox() {
       }
     }
 
-    // ETAPA 2 — SUBTIPO CONSÓRCIO
+    // ETAPA 2 — SUBTIPO
     else if (step === "subtipo") {
       setFlyerData((prev) => ({
         ...prev,
@@ -88,23 +86,19 @@ export default function ChatBox() {
       setStep("formato");
     }
 
-    // ETAPA 3 — FORMATO
+    // ETAPA 3 — FORMATO (CORRIGIDA)
     else if (step === "formato") {
       setFlyerData((prev) => ({
         ...prev,
         formato: input.toLowerCase()
       }));
 
-      // ⚠️ AQUI ESTAVA O ERRO ANTES
-      // NÃO FINALIZA — AVANÇA PARA CAMPANHA
       botResponse =
-        botResponse =
-  "ETAPA 7 ATIVA — QUAL CAMPANHA VOCÊ DESEJA USAR?";
+        "Qual campanha você deseja usar? (Parcelas reduzidas, Lance embutido ou Padrão)";
+      setStep("campanha");
     }
 
-    // =====================
     // ETAPA 7 — CAMPANHA
-    // =====================
     else if (step === "campanha") {
       setFlyerData((prev) => ({
         ...prev,
@@ -115,7 +109,10 @@ export default function ChatBox() {
         "Perfeito! Já tenho todas as informações iniciais para criar seu flyer.";
       setStep("final");
 
-      console.log("DADOS DO FLYER:", flyerData);
+      console.log("DADOS FINAIS DO FLYER:", {
+        ...flyerData,
+        campanha: input
+      });
     }
 
     setMessages((prev) => [
