@@ -1,3 +1,10 @@
+import ChatBox from "./components/Chatbox";
+
 export default function Home() {
-  return <h1>TESTE ABSOLUTO – SE ISSO NÃO APARECER, ESTE PAGE NÃO É USADO</h1>;
+  return (
+    <main>
+      <h1>Projeto Flyer AI</h1>
+      <ChatBox />
+    </main>
+  );
 }
