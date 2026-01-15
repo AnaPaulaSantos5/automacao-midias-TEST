@@ -5,259 +5,174 @@ import { useState } from "react";
 export default function ChatBox() {
   const [messages, setMessages] = useState([
     {
-      sender: "bot",
+      from: "bot",
       text: "Olá! Sou o Flyer AI. Me diga que tipo de flyer você deseja criar."
     }
   ]);
 
-  const [input, setInput] = useState("");
-  const [step, setStep] = useState("identificar");
+  const [step, setStep] = useState("produto");
+  const [formData, setFormData] = useState({});
+  const [showConfirm, setShowConfirm] = useState(false);
 
-  const [flyerData, setFlyerData] = useState({
-    area: null,
-    tipo: null,
-    subtipo: null,
-    formato: null,
-    campanha: null
-  });
-
-  function identificarFlyer(texto) {
-    const text = texto.toLowerCase();
-
-    if (text.includes("consórcio") || text.includes("consorcio")) {
-      return { area: "financas", tipo: "consorcio" };
-    }
-    if (text.includes("pet")) {
-      return { area: "beneficios", tipo: "pet" };
-    }
-    if (text.includes("saúde") || text.includes("saude")) {
-      return { area: "beneficios", tipo: "saude" };
-    }
-    if (text.includes("odonto")) {
-      return { area: "beneficios", tipo: "odonto" };
-    }
-    if (text.includes("seguro")) {
-      return { area: "seguros", tipo: "seguro" };
-    }
-
-    return null;
+  function addMessage(from, text) {
+    setMessages((prev) => [...prev, { from, text }]);
   }
 
-  function sendMessage() {
-    if (!input.trim()) return;
+  function handleUserInput(input) {
+    addMessage("user", input);
 
-    const userMessage = { sender: "user", text: input };
-    let botResponse = "";
+    switch (step) {
+      case "produto":
+        addMessage(
+          "bot",
+          "Perfeito. Qual tipo de consórcio? (Auto, Imóvel ou Serviços)"
+        );
+        setFormData({ produto: input.toLowerCase() });
+        setStep("subtipo");
+        break;
 
-    // =====================
-    // ETAPA 1 — IDENTIFICAR
-    // =====================
-    if (step === "identificar") {
-      const resultado = identificarFlyer(input);
+      case "subtipo":
+        addMessage(
+          "bot",
+          "Ótimo. Esse flyer será para qual formato? (Instagram ou WhatsApp)"
+        );
+        setFormData((prev) => ({ ...prev, subtipo: input.toLowerCase() }));
+        setStep("canal");
+        break;
 
-      if (!resultado) {
-        botResponse =
-          "Certo. Para eu te ajudar melhor, qual tipo de flyer você deseja criar? (Seguro, Consórcio, Odonto, Saúde ou Pet)";
-      } else {
-        setFlyerData((prev) => ({
-          ...prev,
-          area: resultado.area,
-          tipo: resultado.tipo
-        }));
+      case "canal":
+        addMessage("bot", "Qual campanha você deseja usar?");
+        setFormData((prev) => ({ ...prev, canal: input.toLowerCase() }));
+        setStep("campanha");
+        break;
 
-        if (resultado.tipo === "consorcio") {
-          botResponse =
-            "Perfeito. Qual tipo de consórcio? (Auto, Imóvel ou Serviços)";
-          setStep("subtipo");
-        } else {
-          botResponse =
-            "Ótimo. Esse flyer será para qual formato? (Instagram ou WhatsApp)";
-          setStep("formato");
-        }
+      case "campanha":
+        setFormData((prev) => ({ ...prev, campanha: input }));
+        addMessage(
+          "bot",
+          "Perfeito! Confira abaixo as informações do flyer antes de gerar."
+        );
+        setShowConfirm(true);
+        break;
+
+      default:
+        break;
+    }
+  }
+
+  function gerarPayloadFinal() {
+    return {
+      produto: {
+        area: "confi-financas",
+        tipo: "consorcio",
+        subtipo: formData.subtipo
+      },
+      formato: {
+        canal: formData.canal,
+        dimensao:
+          formData.canal === "instagram" ? "1080x1080" : "1080x1920"
+      },
+      campanha: {
+        titulo: "Consórcio Imobiliário",
+        destaque: formData.campanha
+      },
+      identidadeVisual: {
+        paleta: ["#1260c7", "#ffffff", "#000000"],
+        marca: "Confi Finanças"
+      },
+      regrasCriacao: {
+        usarTemplateBase: true,
+        manterIdentidadeVisual: true,
+        evitarElementosNaoPadrao: true
+      },
+      origem: {
+        criadoVia: "chat",
+        dataCriacao: new Date().toISOString()
       }
-    }
+    };
+  }
 
-    // =====================
-    // ETAPA 2 — SUBTIPO
-    // =====================
-    else if (step === "subtipo") {
-      setFlyerData((prev) => ({
-        ...prev,
-        subtipo: input.toLowerCase()
-      }));
+  function confirmarGeracao() {
+    const payloadFinal = gerarPayloadFinal();
+    console.log("PAYLOAD FINAL PARA GERAÇÃO:", payloadFinal);
 
-      botResponse =
-        "Ótimo. Esse flyer será para qual formato? (Instagram ou WhatsApp)";
-      setStep("formato");
-    }
+    addMessage(
+      "bot",
+      "Flyer confirmado! Iniciando processo de geração da arte."
+    );
 
-    // =====================
-    // ETAPA 3 — FORMATO
-    // =====================
-    else if (step === "formato") {
-      setFlyerData((prev) => ({
-        ...prev,
-        formato: input.toLowerCase()
-      }));
+    setShowConfirm(false);
+  }
 
-      botResponse = "Qual campanha você deseja usar?";
-      setStep("campanha");
-    }
-
-    // =====================
-    // ETAPA 7 — CAMPANHA
-    // =====================
-    else if (step === "campanha") {
-      const payloadFinal = {
-        produto: {
-          area:
-            flyerData.area === "financas"
-              ? "confi-financas"
-              : flyerData.area === "beneficios"
-              ? "confi-beneficios"
-              : "confi-seguros",
-
-          tipo: flyerData.tipo,
-          subtipo: flyerData.subtipo
-        },
-
-        formato: {
-          canal: flyerData.formato,
-          dimensao:
-            flyerData.formato === "instagram"
-              ? "1080x1080"
-              : "1080x1920"
-        },
-
-        campanha: {
-          titulo:
-            flyerData.tipo === "consorcio"
-              ? "Consórcio"
-              : flyerData.tipo,
-          destaque: input
-        },
-
-        identidadeVisual: {
-          paleta:
-            flyerData.area === "financas"
-              ? ["#1260c7", "#ffffff", "#000000"]
-              : flyerData.area === "beneficios"
-              ? ["#f5886c", "#ffffff", "#000000"]
-              : ["#ffce0a", "#ffffff", "#000000"],
-
-          marca:
-            flyerData.area === "financas"
-              ? "Confi Finanças"
-              : flyerData.area === "beneficios"
-              ? "Confi Benefícios"
-              : "Confi Seguros"
-        },
-
-        regrasCriacao: {
-          usarTemplateBase: true,
-          manterIdentidadeVisual: true,
-          evitarElementosNaoPadrao: true
-        },
-
-        origem: {
-          criadoVia: "chat",
-          dataCriacao: new Date().toISOString()
-        }
-      };
-
-      console.log("FLYER PAYLOAD FINAL:", payloadFinal);
-
-      botResponse =
-        "Perfeito! Já tenho todas as informações iniciais para criar seu flyer.";
-      setStep("final");
-    }
-
-    setMessages((prev) => [
-      ...prev,
-      userMessage,
-      { sender: "bot", text: botResponse }
+  function editarInformacoes() {
+    setShowConfirm(false);
+    setMessages([
+      {
+        from: "bot",
+        text:
+          "Sem problemas. Vamos começar novamente. Que tipo de flyer você deseja criar?"
+      }
     ]);
-
-    setInput("");
+    setFormData({});
+    setStep("produto");
   }
 
   return (
-    <div style={styles.container}>
-      <div style={styles.chat}>
+    <div style={{ maxWidth: 500, margin: "20px auto" }}>
+      <div
+        style={{
+          border: "1px solid #ccc",
+          padding: 10,
+          minHeight: 300
+        }}
+      >
         {messages.map((msg, index) => (
-          <div
-            key={index}
-            style={{
-              ...styles.message,
-              alignSelf:
-                msg.sender === "user" ? "flex-end" : "flex-start",
-              backgroundColor:
-                msg.sender === "user" ? "#1260c7" : "#f1f1f1",
-              color: msg.sender === "user" ? "#ffffff" : "#000000"
-            }}
-          >
+          <p key={index}>
+            <strong>{msg.from === "bot" ? "Flyer AI" : "Você"}:</strong>{" "}
             {msg.text}
-          </div>
+          </p>
         ))}
       </div>
 
-      <div style={styles.inputArea}>
+      {!showConfirm && step !== "final" && (
         <input
           type="text"
-          placeholder="Digite sua mensagem..."
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          style={styles.input}
+          placeholder="Digite sua resposta..."
+          style={{ width: "100%", marginTop: 10 }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && e.target.value.trim()) {
+              handleUserInput(e.target.value);
+              e.target.value = "";
+            }
+          }}
         />
-        <button onClick={sendMessage} style={styles.button}>
-          Enviar
-        </button>
-      </div>
+      )}
+
+      {showConfirm && (
+        <div style={{ marginTop: 20 }}>
+          <h3>Confirmação do Flyer</h3>
+          <ul>
+            <li>Área: Confi Finanças</li>
+            <li>Produto: Consórcio</li>
+            <li>Tipo: {formData.subtipo}</li>
+            <li>Canal: {formData.canal}</li>
+            <li>Campanha: {formData.campanha}</li>
+          </ul>
+
+          <button onClick={confirmarGeracao}>
+            Gerar flyer
+          </button>
+
+          <button
+            style={{ marginLeft: 10 }}
+            onClick={editarInformacoes}
+          >
+            Editar informações
+          </button>
+        </div>
+      )}
     </div>
   );
 }
 
-const styles = {
-  container: {
-    maxWidth: 600,
-    margin: "40px auto",
-    border: "1px solid #ddd",
-    borderRadius: 8,
-    display: "flex",
-    flexDirection: "column",
-    height: "70vh"
-  },
-  chat: {
-    flex: 1,
-    padding: 16,
-    display: "flex",
-    flexDirection: "column",
-    gap: 12,
-    overflowY: "auto"
-  },
-  message: {
-    padding: "10px 14px",
-    borderRadius: 16,
-    maxWidth: "80%",
-    fontSize: 14
-  },
-  inputArea: {
-    display: "flex",
-    borderTop: "1px solid #ddd"
-  },
-  input: {
-    flex: 1,
-    padding: 12,
-    border: "none",
-    outline: "none",
-    fontSize: 14
-  },
-  button: {
-    padding: "0 20px",
-    border: "none",
-    backgroundColor: "#000000",
-    color: "#ffffff",
-    cursor: "pointer"
-  }
-};
 
