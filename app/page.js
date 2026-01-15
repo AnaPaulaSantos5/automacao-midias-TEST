@@ -1,4 +1,3 @@
-export default function Home() {
 import ChatBox from "./components/ChatBox";
 
 export default function Home() {
