@@ -1,3 +1,16 @@
-export default function Home() {
-  return <h1>EU SOU O PAGE ATIVO</h1>;
-}
+import consorcio from "./consorcio";
+// import financiamento from "./financiamento";
+// import previdencia from "./previdencia";
+
+const confiFinancas = {
+  area: "financas",
+  marca: "Confi Finanças",
+
+  produtos: {
+    consorcio,
+    // financiamento,
+    // previdencia
+  }
+};
+
+export default confiFinancas;
