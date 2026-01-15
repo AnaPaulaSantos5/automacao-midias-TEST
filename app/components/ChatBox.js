@@ -1,178 +1,163 @@
 "use client";
 
 import { useState } from "react";
+import { produtos } from "../data/produtos";
 
 export default function ChatBox() {
   const [messages, setMessages] = useState([
-    {
-      from: "bot",
-      text: "Olá! Sou o Flyer AI. Me diga que tipo de flyer você deseja criar."
-    }
+    { from: "bot", text: "Olá! Sou o Flyer AI. Me diga que tipo de flyer você deseja criar." }
   ]);
 
-  const [step, setStep] = useState("produto");
-  const [formData, setFormData] = useState({});
-  const [showConfirm, setShowConfirm] = useState(false);
+  const [input, setInput] = useState("");
+  const [etapa, setEtapa] = useState(1);
+  const [contexto, setContexto] = useState({});
 
-  function addMessage(from, text) {
-    setMessages((prev) => [...prev, { from, text }]);
+  function adicionarMensagem(from, text) {
+    setMessages(prev => [...prev, { from, text }]);
   }
 
-  function handleUserInput(input) {
-    addMessage("user", input);
+  function detectarProduto(texto) {
+    const t = texto.toLowerCase();
 
-    switch (step) {
-      case "produto":
-        addMessage(
-          "bot",
-          "Perfeito. Qual tipo de consórcio? (Auto, Imóvel ou Serviços)"
-        );
-        setFormData({ produto: input.toLowerCase() });
-        setStep("subtipo");
-        break;
+    if (t.includes("consórcio") || t.includes("consorcio")) return "consorcio";
+    if (t.includes("residencial")) return "seguro_residencial";
+    if (t.includes("auto")) return "seguro_auto";
+    if (t.includes("saúde") || t.includes("saude")) return "plano_saude";
+    if (t.includes("odonto")) return "seguro_odonto";
+    if (t.includes("pet")) return "seguro_pet";
 
-      case "subtipo":
-        addMessage(
-          "bot",
-          "Ótimo. Esse flyer será para qual formato? (Instagram ou WhatsApp)"
-        );
-        setFormData((prev) => ({ ...prev, subtipo: input.toLowerCase() }));
-        setStep("canal");
-        break;
+    return null;
+  }
 
-      case "canal":
-        addMessage("bot", "Qual campanha você deseja usar?");
-        setFormData((prev) => ({ ...prev, canal: input.toLowerCase() }));
-        setStep("campanha");
-        break;
+  function detectarSubtipo(produtoKey, texto) {
+    const subtipos = produtos[produtoKey]?.subtipos;
+    if (!subtipos) return null;
 
-      case "campanha":
-        setFormData((prev) => ({ ...prev, campanha: input }));
-        addMessage(
-          "bot",
-          "Perfeito! Confira abaixo as informações do flyer antes de gerar."
-        );
-        setShowConfirm(true);
-        break;
+    const t = texto.toLowerCase();
 
-      default:
-        break;
+    for (const key of Object.keys(subtipos)) {
+      if (t.includes(key)) return key;
     }
+
+    return null;
   }
 
-  function gerarPayloadFinal() {
-    return {
-      produto: {
-        area: "confi-financas",
-        tipo: "consorcio",
-        subtipo: formData.subtipo
-      },
-      formato: {
-        canal: formData.canal,
-        dimensao:
-          formData.canal === "instagram" ? "1080x1080" : "1080x1920"
-      },
-      campanha: {
-        titulo: "Consórcio Imobiliário",
-        destaque: formData.campanha
-      },
-      identidadeVisual: {
-        paleta: ["#1260c7", "#ffffff", "#000000"],
-        marca: "Confi Finanças"
-      },
-      regrasCriacao: {
-        usarTemplateBase: true,
-        manterIdentidadeVisual: true,
-        evitarElementosNaoPadrao: true
-      },
-      origem: {
-        criadoVia: "chat",
-        dataCriacao: new Date().toISOString()
+  function handleSend() {
+    if (!input.trim()) return;
+
+    const userText = input;
+    adicionarMensagem("user", userText);
+    setInput("");
+
+    /* =====================
+       ETAPA 1 – PRODUTO
+    ===================== */
+    if (etapa === 1) {
+      const produtoKey = detectarProduto(userText);
+
+      if (!produtoKey) {
+        adicionarMensagem(
+          "bot",
+          "Certo. Para eu te ajudar melhor, qual tipo de flyer você deseja criar? (Consórcio, Seguro, Saúde, Odonto ou Pet)"
+        );
+        return;
       }
-    };
-  }
 
-  function confirmarGeracao() {
-    const payloadFinal = gerarPayloadFinal();
-    console.log("PAYLOAD FINAL PARA GERAÇÃO:", payloadFinal);
+      const produto = produtos[produtoKey];
 
-    addMessage(
-      "bot",
-      "Flyer confirmado! Iniciando processo de geração da arte."
-    );
+      setContexto({ produtoKey });
+      setEtapa(2);
 
-    setShowConfirm(false);
-  }
+      const subtipos = Object.values(produto.subtipos)
+        .map(s => s.nomeExibicao)
+        .join(", ");
 
-  function editarInformacoes() {
-    setShowConfirm(false);
-    setMessages([
-      {
-        from: "bot",
-        text:
-          "Sem problemas. Vamos começar novamente. Que tipo de flyer você deseja criar?"
+      adicionarMensagem(
+        "bot",
+        `Perfeito! Qual tipo de ${produto.nomeExibicao}? (${subtipos})`
+      );
+      return;
+    }
+
+    /* =====================
+       ETAPA 2 – SUBTIPO
+    ===================== */
+    if (etapa === 2) {
+      const { produtoKey } = contexto;
+      const subtipoKey = detectarSubtipo(produtoKey, userText);
+
+      if (!subtipoKey) {
+        adicionarMensagem("bot", "Não entendi. Pode informar o tipo corretamente?");
+        return;
       }
-    ]);
-    setFormData({});
-    setStep("produto");
+
+      setContexto(prev => ({ ...prev, subtipoKey }));
+      setEtapa(3);
+
+      adicionarMensagem(
+        "bot",
+        "Ótimo. Esse flyer será para qual formato? (Instagram ou WhatsApp)"
+      );
+      return;
+    }
+
+    /* =====================
+       ETAPA 3 – FORMATO
+    ===================== */
+    if (etapa === 3) {
+      const formato = userText.toLowerCase();
+
+      if (!["instagram", "whatsapp"].includes(formato)) {
+        adicionarMensagem("bot", "Formato inválido. Use Instagram ou WhatsApp.");
+        return;
+      }
+
+      setContexto(prev => ({ ...prev, formato }));
+      setEtapa(4);
+
+      adicionarMensagem(
+        "bot",
+        "Qual campanha você deseja usar?"
+      );
+      return;
+    }
+
+    /* =====================
+       ETAPA 4 – CAMPANHA
+    ===================== */
+    if (etapa === 4) {
+      setContexto(prev => ({ ...prev, campanha: userText }));
+      setEtapa(5);
+
+      adicionarMensagem(
+        "bot",
+        "Perfeito! Já tenho todas as informações iniciais para criar seu flyer."
+      );
+
+      console.log("CONTEXTO FINAL:", contexto);
+      return;
+    }
   }
 
   return (
-    <div style={{ maxWidth: 500, margin: "20px auto" }}>
-      <div
-        style={{
-          border: "1px solid #ccc",
-          padding: 10,
-          minHeight: 300
-        }}
-      >
-        {messages.map((msg, index) => (
-          <p key={index}>
-            <strong>{msg.from === "bot" ? "Flyer AI" : "Você"}:</strong>{" "}
-            {msg.text}
-          </p>
+    <div style={{ maxWidth: 500, marginTop: 20 }}>
+      <div style={{ border: "1px solid #ccc", padding: 10, minHeight: 300 }}>
+        {messages.map((m, i) => (
+          <div key={i} style={{ textAlign: m.from === "bot" ? "left" : "right" }}>
+            <p><strong>{m.from === "bot" ? "Flyer AI" : "Você"}:</strong> {m.text}</p>
+          </div>
         ))}
       </div>
 
-      {!showConfirm && step !== "final" && (
+      <div style={{ display: "flex", marginTop: 10 }}>
         <input
-          type="text"
-          placeholder="Digite sua resposta..."
-          style={{ width: "100%", marginTop: 10 }}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && e.target.value.trim()) {
-              handleUserInput(e.target.value);
-              e.target.value = "";
-            }
-          }}
+          value={input}
+          onChange={e => setInput(e.target.value)}
+          style={{ flex: 1 }}
+          placeholder="Digite aqui..."
         />
-      )}
-
-      {showConfirm && (
-        <div style={{ marginTop: 20 }}>
-          <h3>Confirmação do Flyer</h3>
-          <ul>
-            <li>Área: Confi Finanças</li>
-            <li>Produto: Consórcio</li>
-            <li>Tipo: {formData.subtipo}</li>
-            <li>Canal: {formData.canal}</li>
-            <li>Campanha: {formData.campanha}</li>
-          </ul>
-
-          <button onClick={confirmarGeracao}>
-            Gerar flyer
-          </button>
-
-          <button
-            style={{ marginLeft: 10 }}
-            onClick={editarInformacoes}
-          >
-            Editar informações
-          </button>
-        </div>
-      )}
+        <button onClick={handleSend}>Enviar</button>
+      </div>
     </div>
   );
 }
-
-
