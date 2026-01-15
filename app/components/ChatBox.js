@@ -1,152 +1,141 @@
 "use client";
 
 import { useState } from "react";
-
-/**
- * DEFINIÇÃO DOS PRODUTOS
- */
-const produtos = {
-  consorcio: {
-    area: "financas",
-    nome: "Consórcio",
-    subtipos: ["auto", "imóvel", "serviços"]
-  },
-  seguro_residencial: {
-    area: "seguros",
-    nome: "Seguro Residencial",
-    subtipos: ["seguro residencial"]
-  },
-  pet: {
-    area: "beneficios",
-    nome: "Seguro Pet",
-    subtipos: ["pet"]
-  },
-  saude: {
-    area: "beneficios",
-    nome: "Seguro Saúde",
-    subtipos: ["saúde"]
-  },
-  odonto: {
-    area: "beneficios",
-    nome: "Seguro Odonto",
-    subtipos: ["odonto"]
-  }
-};
-
-/**
- * DETECTA PRODUTO EM QUALQUER ETAPA
- */
-function detectarProduto(texto) {
-  const t = texto.toLowerCase();
-
-  if (t.includes("consórcio") || t.includes("consorcio")) return "consorcio";
-  if (t.includes("seguro residencial")) return "seguro_residencial";
-  if (t.includes("pet")) return "pet";
-  if (t.includes("saúde") || t.includes("saude")) return "saude";
-  if (t.includes("odonto")) return "odonto";
-
-  return null;
-}
+import { canais } from "../config/canais";
 
 export default function ChatBox() {
   const [messages, setMessages] = useState([
-    {
-      sender: "bot",
-      text: "Olá! Sou o Flyer AI. Me diga que tipo de flyer você deseja criar."
-    }
+    { sender: "bot", text: "Olá! Sou o Flyer AI. Me diga que tipo de flyer você deseja criar." }
   ]);
 
   const [input, setInput] = useState("");
   const [step, setStep] = useState("produto");
 
   const [contexto, setContexto] = useState({
-    produtoKey: null,
+    area: null,
+    tipo: null,
     subtipo: null,
+    canal: null,
     formato: null,
     campanha: null
   });
 
-  function adicionarMensagem(sender, text) {
-    setMessages((prev) => [...prev, { sender, text }]);
+  function addMessage(sender, text) {
+    setMessages(prev => [...prev, { sender, text }]);
+  }
+
+  function identificarProduto(texto) {
+    const text = texto.toLowerCase();
+
+    if (text.includes("consórcio") || text.includes("consorcio")) {
+      return { area: "financas", tipo: "consorcio" };
+    }
+    if (text.includes("seguro residencial")) {
+      return { area: "seguros", tipo: "residencial" };
+    }
+    if (text.includes("pet")) {
+      return { area: "beneficios", tipo: "pet" };
+    }
+    if (text.includes("saúde") || text.includes("saude")) {
+      return { area: "beneficios", tipo: "saude" };
+    }
+    return null;
   }
 
   function sendMessage() {
     if (!input.trim()) return;
 
-    const textoUsuario = input;
-    adicionarMensagem("user", textoUsuario);
+    const userText = input;
+    addMessage("user", userText);
 
-    /**
-     * 🔁 CORREÇÃO PRINCIPAL
-     * Detecta produto em QUALQUER etapa
-     */
-    const produtoDetectado = detectarProduto(textoUsuario);
+    // ETAPA 1 — PRODUTO
+    if (step === "produto") {
+      const resultado = identificarProduto(userText);
 
-    if (produtoDetectado && produtoDetectado !== contexto.produtoKey) {
-      const produto = produtos[produtoDetectado];
+      if (!resultado) {
+        addMessage(
+          "bot",
+          "Não entendi. Informe o produto corretamente (Consórcio, Seguro Residencial, Saúde, Pet)."
+        );
+      } else {
+        setContexto(prev => ({ ...prev, ...resultado }));
 
-      setContexto({
-        produtoKey: produtoDetectado,
-        subtipo: null,
-        formato: null,
-        campanha: null
-      });
-
-      setStep("subtipo");
-
-      adicionarMensagem(
-        "bot",
-        `Perfeito! Qual tipo de ${produto.nome}? (${produto.subtipos.join(
-          ", "
-        )})`
-      );
-
-      setInput("");
-      return;
+        if (resultado.tipo === "consorcio") {
+          addMessage(
+            "bot",
+            "Perfeito. Qual tipo de consórcio? (Auto, Imóvel ou Serviços)"
+          );
+          setStep("subtipo");
+        } else {
+          addMessage(
+            "bot",
+            "Ótimo. Esse flyer será para qual canal? (Instagram ou WhatsApp)"
+          );
+          setStep("canal");
+        }
+      }
     }
 
-    /**
-     * ETAPAS NORMAIS
-     */
-    if (step === "subtipo") {
-      setContexto((prev) => ({
-        ...prev,
-        subtipo: textoUsuario.toLowerCase()
-      }));
+    // ETAPA 2 — SUBTIPO
+    else if (step === "subtipo") {
+      setContexto(prev => ({ ...prev, subtipo: userText.toLowerCase() }));
 
-      setStep("formato");
-
-      adicionarMensagem(
+      addMessage(
         "bot",
-        "Ótimo. Esse flyer será para qual formato? (Instagram ou WhatsApp)"
+        "Ótimo. Esse flyer será para qual canal? (Instagram ou WhatsApp)"
       );
+      setStep("canal");
     }
 
+    // ETAPA 3 — CANAL
+    else if (step === "canal") {
+      const canal = userText.toLowerCase();
+
+      if (!canais[canal]) {
+        addMessage("bot", "Canal inválido. Escolha Instagram ou WhatsApp.");
+      } else {
+        setContexto(prev => ({ ...prev, canal }));
+
+        const formatosTexto = canais[canal].formatos
+          .map(f => f.label)
+          .join(" | ");
+
+        addMessage(
+          "bot",
+          `Perfeito. Qual formato você deseja?\n${formatosTexto}`
+        );
+
+        setStep("formato");
+      }
+    }
+
+    // ETAPA 4 — FORMATO
     else if (step === "formato") {
-      setContexto((prev) => ({
-        ...prev,
-        formato: textoUsuario.toLowerCase()
-      }));
-
-      setStep("campanha");
-
-      adicionarMensagem(
-        "bot",
-        "Qual campanha você deseja usar?"
+      const formatos = canais[contexto.canal].formatos;
+      const formatoEscolhido = formatos.find(f =>
+        f.label.toLowerCase().includes(userText.toLowerCase())
       );
+
+      if (!formatoEscolhido) {
+        addMessage("bot", "Formato inválido. Escolha um dos formatos listados.");
+      } else {
+        setContexto(prev => ({ ...prev, formato: formatoEscolhido }));
+
+        addMessage("bot", "Qual campanha você deseja usar?");
+        setStep("campanha");
+      }
     }
 
+    // ETAPA 5 — CAMPANHA
     else if (step === "campanha") {
-      const payload = {
-        produto: contexto.produtoKey,
-        subtipo: contexto.subtipo,
-        formato: contexto.formato,
-        campanha: textoUsuario
+      const payloadFinal = {
+        ...contexto,
+        campanha: userText
       };
 
-      console.log("PAYLOAD FINAL:", payload);
+      console.log("PAYLOAD FINAL:", payloadFinal);
 
-      adicionarMensagem(
+      addMessage(
         "bot",
         "Perfeito! Já tenho todas as informações iniciais para criar seu flyer."
       );
@@ -165,10 +154,8 @@ export default function ChatBox() {
             key={index}
             style={{
               ...styles.message,
-              alignSelf:
-                msg.sender === "user" ? "flex-end" : "flex-start",
-              backgroundColor:
-                msg.sender === "user" ? "#1260c7" : "#f1f1f1",
+              alignSelf: msg.sender === "user" ? "flex-end" : "flex-start",
+              backgroundColor: msg.sender === "user" ? "#1260c7" : "#f1f1f1",
               color: msg.sender === "user" ? "#ffffff" : "#000000"
             }}
           >
@@ -179,10 +166,9 @@ export default function ChatBox() {
 
       <div style={styles.inputArea}>
         <input
-          type="text"
-          placeholder="Digite sua mensagem..."
           value={input}
           onChange={(e) => setInput(e.target.value)}
+          placeholder="Digite sua mensagem..."
           style={styles.input}
         />
         <button onClick={sendMessage} style={styles.button}>
@@ -193,9 +179,6 @@ export default function ChatBox() {
   );
 }
 
-/**
- * ESTILOS
- */
 const styles = {
   container: {
     maxWidth: 600,
@@ -218,7 +201,8 @@ const styles = {
     padding: "10px 14px",
     borderRadius: 16,
     maxWidth: "80%",
-    fontSize: 14
+    fontSize: 14,
+    whiteSpace: "pre-line"
   },
   inputArea: {
     display: "flex",
@@ -228,14 +212,14 @@ const styles = {
     flex: 1,
     padding: 12,
     border: "none",
-    outline: "none",
-    fontSize: 14
+    outline: "none"
   },
   button: {
     padding: "0 20px",
     border: "none",
-    backgroundColor: "#000000",
-    color: "#ffffff",
+    backgroundColor: "#000",
+    color: "#fff",
     cursor: "pointer"
   }
 };
+
