@@ -4,7 +4,10 @@ import { useState } from "react";
 
 export default function ChatBox() {
   const [messages, setMessages] = useState([
-    { sender: "bot", text: "Olá! Sou o Flyer AI. Me diga que tipo de flyer você deseja criar." }
+    {
+      sender: "bot",
+      text: "Olá! Sou o Flyer AI. Me diga que tipo de flyer você deseja criar."
+    }
   ]);
 
   const [input, setInput] = useState("");
@@ -24,10 +27,18 @@ export default function ChatBox() {
     if (text.includes("consórcio") || text.includes("consorcio")) {
       return { area: "financas", tipo: "consorcio" };
     }
-    if (text.includes("pet")) return { area: "beneficios", tipo: "pet" };
-    if (text.includes("saúde") || text.includes("saude")) return { area: "beneficios", tipo: "saude" };
-    if (text.includes("odonto")) return { area: "beneficios", tipo: "odonto" };
-    if (text.includes("seguro")) return { area: "seguros", tipo: "seguro" };
+    if (text.includes("pet")) {
+      return { area: "beneficios", tipo: "pet" };
+    }
+    if (text.includes("saúde") || text.includes("saude")) {
+      return { area: "beneficios", tipo: "saude" };
+    }
+    if (text.includes("odonto")) {
+      return { area: "beneficios", tipo: "odonto" };
+    }
+    if (text.includes("seguro")) {
+      return { area: "seguros", tipo: "seguro" };
+    }
 
     return null;
   }
@@ -38,6 +49,9 @@ export default function ChatBox() {
     const userMessage = { sender: "user", text: input };
     let botResponse = "";
 
+    // =====================
+    // ETAPA 1 — IDENTIFICAR
+    // =====================
     if (step === "identificar") {
       const resultado = identificarFlyer(input);
 
@@ -45,51 +59,141 @@ export default function ChatBox() {
         botResponse =
           "Certo. Para eu te ajudar melhor, qual tipo de flyer você deseja criar? (Seguro, Consórcio, Odonto, Saúde ou Pet)";
       } else {
-        setFlyerData((prev) => ({ ...prev, ...resultado }));
+        setFlyerData((prev) => ({
+          ...prev,
+          area: resultado.area,
+          tipo: resultado.tipo
+        }));
 
         if (resultado.tipo === "consorcio") {
-          botResponse = "Perfeito. Qual tipo de consórcio? (Auto, Imóvel ou Serviços)";
+          botResponse =
+            "Perfeito. Qual tipo de consórcio? (Auto, Imóvel ou Serviços)";
           setStep("subtipo");
         } else {
-          botResponse = "Ótimo. Esse flyer será para qual formato? (Instagram ou WhatsApp)";
+          botResponse =
+            "Ótimo. Esse flyer será para qual formato? (Instagram ou WhatsApp)";
           setStep("formato");
         }
       }
     }
 
+    // =====================
+    // ETAPA 2 — SUBTIPO
+    // =====================
     else if (step === "subtipo") {
-      setFlyerData((prev) => ({ ...prev, subtipo: input }));
-      botResponse = "Ótimo. Esse flyer será para qual formato? (Instagram ou WhatsApp)";
+      setFlyerData((prev) => ({
+        ...prev,
+        subtipo: input.toLowerCase()
+      }));
+
+      botResponse =
+        "Ótimo. Esse flyer será para qual formato? (Instagram ou WhatsApp)";
       setStep("formato");
     }
 
+    // =====================
+    // ETAPA 3 — FORMATO
+    // =====================
     else if (step === "formato") {
-      setFlyerData((prev) => ({ ...prev, formato: input }));
+      setFlyerData((prev) => ({
+        ...prev,
+        formato: input.toLowerCase()
+      }));
+
       botResponse = "Qual campanha você deseja usar?";
       setStep("campanha");
     }
 
+    // =====================
+    // ETAPA 7 — CAMPANHA
+    // =====================
     else if (step === "campanha") {
-      setFlyerData((prev) => ({ ...prev, campanha: input }));
-      botResponse = "Perfeito! Já tenho todas as informações iniciais para criar seu flyer.";
+      const payloadFinal = {
+        produto: {
+          area:
+            flyerData.area === "financas"
+              ? "confi-financas"
+              : flyerData.area === "beneficios"
+              ? "confi-beneficios"
+              : "confi-seguros",
+
+          tipo: flyerData.tipo,
+          subtipo: flyerData.subtipo
+        },
+
+        formato: {
+          canal: flyerData.formato,
+          dimensao:
+            flyerData.formato === "instagram"
+              ? "1080x1080"
+              : "1080x1920"
+        },
+
+        campanha: {
+          titulo:
+            flyerData.tipo === "consorcio"
+              ? "Consórcio"
+              : flyerData.tipo,
+          destaque: input
+        },
+
+        identidadeVisual: {
+          paleta:
+            flyerData.area === "financas"
+              ? ["#1260c7", "#ffffff", "#000000"]
+              : flyerData.area === "beneficios"
+              ? ["#f5886c", "#ffffff", "#000000"]
+              : ["#ffce0a", "#ffffff", "#000000"],
+
+          marca:
+            flyerData.area === "financas"
+              ? "Confi Finanças"
+              : flyerData.area === "beneficios"
+              ? "Confi Benefícios"
+              : "Confi Seguros"
+        },
+
+        regrasCriacao: {
+          usarTemplateBase: true,
+          manterIdentidadeVisual: true,
+          evitarElementosNaoPadrao: true
+        },
+
+        origem: {
+          criadoVia: "chat",
+          dataCriacao: new Date().toISOString()
+        }
+      };
+
+      console.log("FLYER PAYLOAD FINAL:", payloadFinal);
+
+      botResponse =
+        "Perfeito! Já tenho todas as informações iniciais para criar seu flyer.";
       setStep("final");
     }
 
-    setMessages((prev) => [...prev, userMessage, { sender: "bot", text: botResponse }]);
+    setMessages((prev) => [
+      ...prev,
+      userMessage,
+      { sender: "bot", text: botResponse }
+    ]);
+
     setInput("");
   }
 
   return (
     <div style={styles.container}>
       <div style={styles.chat}>
-        {messages.map((msg, i) => (
+        {messages.map((msg, index) => (
           <div
-            key={i}
+            key={index}
             style={{
               ...styles.message,
-              alignSelf: msg.sender === "user" ? "flex-end" : "flex-start",
-              backgroundColor: msg.sender === "user" ? "#1260c7" : "#f1f1f1",
-              color: msg.sender === "user" ? "#fff" : "#000"
+              alignSelf:
+                msg.sender === "user" ? "flex-end" : "flex-start",
+              backgroundColor:
+                msg.sender === "user" ? "#1260c7" : "#f1f1f1",
+              color: msg.sender === "user" ? "#ffffff" : "#000000"
             }}
           >
             {msg.text}
@@ -99,22 +203,61 @@ export default function ChatBox() {
 
       <div style={styles.inputArea}>
         <input
+          type="text"
+          placeholder="Digite sua mensagem..."
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="Digite sua mensagem..."
           style={styles.input}
         />
-        <button onClick={sendMessage} style={styles.button}>Enviar</button>
+        <button onClick={sendMessage} style={styles.button}>
+          Enviar
+        </button>
       </div>
     </div>
   );
 }
 
 const styles = {
-  container: { maxWidth: 600, margin: "40px auto", border: "1px solid #ddd", borderRadius: 8, display: "flex", flexDirection: "column", height: "70vh" },
-  chat: { flex: 1, padding: 16, display: "flex", flexDirection: "column", gap: 12, overflowY: "auto" },
-  message: { padding: "10px 14px", borderRadius: 16, maxWidth: "80%", fontSize: 14 },
-  inputArea: { display: "flex", borderTop: "1px solid #ddd" },
-  input: { flex: 1, padding: 12, border: "none", outline: "none" },
-  button: { padding: "0 20px", border: "none", backgroundColor: "#000", color: "#fff", cursor: "pointer" }
+  container: {
+    maxWidth: 600,
+    margin: "40px auto",
+    border: "1px solid #ddd",
+    borderRadius: 8,
+    display: "flex",
+    flexDirection: "column",
+    height: "70vh"
+  },
+  chat: {
+    flex: 1,
+    padding: 16,
+    display: "flex",
+    flexDirection: "column",
+    gap: 12,
+    overflowY: "auto"
+  },
+  message: {
+    padding: "10px 14px",
+    borderRadius: 16,
+    maxWidth: "80%",
+    fontSize: 14
+  },
+  inputArea: {
+    display: "flex",
+    borderTop: "1px solid #ddd"
+  },
+  input: {
+    flex: 1,
+    padding: 12,
+    border: "none",
+    outline: "none",
+    fontSize: 14
+  },
+  button: {
+    padding: "0 20px",
+    border: "none",
+    backgroundColor: "#000000",
+    color: "#ffffff",
+    cursor: "pointer"
+  }
 };
+
