@@ -1,4 +1,4 @@
-import ChatBox from "./app/Chatbox";
+import ChatBox from "./Chatbox";
 
 export default function Home() {
   return (
