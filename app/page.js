@@ -1,9 +1,9 @@
 import ChatBox from "./components/ChatBox";
 
-export default function Home() {
+export default function Page() {
   return (
-    <main style={{ padding: 20 }}>
-      <h1>Projeto Flyer AI</h1>
+    <main style={{ padding: 40 }}>
+      <h1>Flyer AI</h1>
       <ChatBox />
     </main>
   );
