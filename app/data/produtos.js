@@ -11,15 +11,9 @@ export const produtos = {
       paleta: ["#1260c7", "#ffffff", "#000000"]
     },
     subtipos: {
-      auto: {
-        nomeExibicao: "Consórcio Auto"
-      },
-      imovel: {
-        nomeExibicao: "Consórcio Imobiliário"
-      },
-      servicos: {
-        nomeExibicao: "Consórcio de Serviços"
-      }
+      auto: { nomeExibicao: "Consórcio Auto" },
+      imovel: { nomeExibicao: "Consórcio Imobiliário" },
+      servicos: { nomeExibicao: "Consórcio de Serviços" }
     },
     formatos: ["instagram", "whatsapp"]
   },
@@ -36,9 +30,7 @@ export const produtos = {
       paleta: ["#ffce0a", "#ffffff", "#000000"]
     },
     subtipos: {
-      residencial: {
-        nomeExibicao: "Seguro Residencial"
-      }
+      residencial: { nomeExibicao: "Seguro Residencial" }
     },
     formatos: ["instagram", "whatsapp"]
   },
@@ -51,9 +43,7 @@ export const produtos = {
       paleta: ["#ffce0a", "#ffffff", "#000000"]
     },
     subtipos: {
-      auto: {
-        nomeExibicao: "Seguro Auto"
-      }
+      auto: { nomeExibicao: "Seguro Auto" }
     },
     formatos: ["instagram", "whatsapp"]
   },
@@ -70,9 +60,7 @@ export const produtos = {
       paleta: ["#f5886c", "#ffffff", "#000000"]
     },
     subtipos: {
-      saude: {
-        nomeExibicao: "Plano de Saúde"
-      }
+      saude: { nomeExibicao: "Plano de Saúde" }
     },
     formatos: ["instagram", "whatsapp"]
   },
@@ -85,9 +73,7 @@ export const produtos = {
       paleta: ["#f5886c", "#ffffff", "#000000"]
     },
     subtipos: {
-      odonto: {
-        nomeExibicao: "Seguro Odonto"
-      }
+      odonto: { nomeExibicao: "Seguro Odonto" }
     },
     formatos: ["instagram", "whatsapp"]
   },
@@ -100,10 +86,10 @@ export const produtos = {
       paleta: ["#f5886c", "#ffffff", "#000000"]
     },
     subtipos: {
-      pet: {
-        nomeExibicao: "Seguro Pet"
-      }
+      pet: { nomeExibicao: "Seguro Pet" }
     },
     formatos: ["instagram", "whatsapp"]
   }
 };
+
+export default produtos;
