@@ -4,63 +4,75 @@ import { detectarProduto } from "./detectarProduto";
 import { CHAT_STEPS } from "./stateMachine";
 
 /**
- * Processa cada mensagem do usuário e devolve:
- * - texto de resposta
- * - novo estado do chat
+ * Motor central do chat
+ * Recebe estado atual, mensagem do usuário e flyerConfig (flyersBase)
  */
 export function processarMensagem(state, mensagem, flyerConfig) {
+  const textoUsuario = mensagem.trim().toLowerCase();
+
   const resposta = {
     texto: "",
     novoState: { ...state }
   };
 
-  const textoNormalizado = mensagem.toLowerCase().trim();
+  // =========================
+  // 🔁 DETECÇÃO GLOBAL DE PRODUTO
+  // =========================
+  const produtoDetectado = detectarProduto(textoUsuario);
 
-  // --------------------------------------------------
-  // 1️⃣ DETECÇÃO DE PRODUTO (em qualquer momento)
-  // --------------------------------------------------
-  const produtoDetectado = detectarProduto(textoNormalizado);
-
-  if (produtoDetectado && produtoDetectado.produto !== state.produto) {
+  if (
+    produtoDetectado &&
+    produtoDetectado.tipo !== state.tipo
+  ) {
     resposta.novoState = {
-      produto: produtoDetectado.produto,
+      step: CHAT_STEPS.CANAL,
+      ...produtoDetectado,
       canal: null,
       formato: null,
       campanha: null,
-      detalhes: {},
-      step: CHAT_STEPS.CANAL
+      detalhes: {}
     };
 
     resposta.texto = perguntasMap.canal;
     return resposta;
   }
 
-  // --------------------------------------------------
-  // 2️⃣ FLUXO PRINCIPAL DO CHAT
-  // --------------------------------------------------
+  // =========================
+  // FLUXO POR ETAPA
+  // =========================
   switch (state.step) {
+    // -------------------------
     case CHAT_STEPS.INICIO:
       resposta.texto = perguntasMap.produto;
       resposta.novoState.step = CHAT_STEPS.PRODUTO;
       break;
 
+    // -------------------------
     case CHAT_STEPS.PRODUTO:
       if (!produtoDetectado) {
-        resposta.texto = "Não consegui identificar o produto. Pode repetir?";
+        resposta.texto = perguntasMap.produtoErro;
         break;
       }
 
-      resposta.novoState.produto = produtoDetectado.produto;
-      resposta.novoState.step = CHAT_STEPS.CANAL;
+      resposta.novoState = {
+        ...state,
+        ...produtoDetectado,
+        step: CHAT_STEPS.CANAL
+      };
+
       resposta.texto = perguntasMap.canal;
       break;
 
+    // -------------------------
     case CHAT_STEPS.CANAL:
-      resposta.novoState.canal = textoNormalizado.includes("whats")
-        ? "whatsapp"
-        : "instagram";
+      if (!["instagram", "whatsapp"].includes(textoUsuario)) {
+        resposta.texto = perguntasMap.canalErro;
+        break;
+      }
 
-      if (resposta.novoState.canal === "instagram") {
+      resposta.novoState.canal = textoUsuario;
+
+      if (textoUsuario === "instagram") {
         resposta.texto = perguntasMap.formato;
         resposta.novoState.step = CHAT_STEPS.FORMATO;
       } else {
@@ -70,51 +82,64 @@ export function processarMensagem(state, mensagem, flyerConfig) {
       }
       break;
 
+    // -------------------------
     case CHAT_STEPS.FORMATO:
-      resposta.novoState.formato = textoNormalizado;
+      resposta.novoState.formato = textoUsuario;
       resposta.texto = perguntasMap.campanha;
       resposta.novoState.step = CHAT_STEPS.CAMPANHA;
       break;
 
+    // -------------------------
     case CHAT_STEPS.CAMPANHA:
       resposta.novoState.campanha =
-        textoNormalizado === "nenhuma" ? null : mensagem;
+        textoUsuario === "nenhuma" ? null : mensagem;
 
       if (flyerConfig?.comportamento?.possuiTabela) {
         resposta.texto = perguntasMap.tabela;
         resposta.novoState.step = CHAT_STEPS.DETALHES;
       } else {
         resposta.novoState.step = CHAT_STEPS.FINAL;
-        resposta.texto =
-          "Perfeito! Já tenho todas as informações iniciais para criar seu flyer.";
+        const validacao = validarFlyer(flyerConfig, resposta.novoState);
+        resposta.texto = validacao.valido
+          ? perguntasMap.final
+          : `Faltam informações: ${validacao.erros.join(", ")}`;
       }
       break;
 
+    // -------------------------
     case CHAT_STEPS.DETALHES:
       resposta.novoState.detalhes = {
-        ...(state.detalhes || {}),
-        textoAdicional: mensagem
+        ...state.detalhes,
+        observacoes: mensagem
       };
 
       resposta.novoState.step = CHAT_STEPS.FINAL;
-      resposta.texto =
-        "Perfeito! Já tenho todas as informações iniciais para criar seu flyer.";
+
+      const validacaoFinal = validarFlyer(
+        flyerConfig,
+        resposta.novoState
+      );
+
+      resposta.texto = validacaoFinal.valido
+        ? perguntasMap.final
+        : `Faltam informações: ${validacaoFinal.erros.join(", ")}`;
       break;
 
+    // -------------------------
     case CHAT_STEPS.FINAL:
-      const validacao = validarFlyer(flyerConfig, resposta.novoState);
-
-      resposta.texto = validacao.valido
-        ? "Flyer validado com sucesso. Pronto para geração."
-        : `Ainda faltam informações: ${validacao.erros.join(", ")}`;
+      resposta.texto =
+        "Se quiser criar outro flyer, é só me dizer o produto.";
+      resposta.novoState.step = CHAT_STEPS.INICIO;
       break;
 
+    // -------------------------
     default:
-      resposta.texto = perguntasMap.produto;
-      resposta.novoState.step = CHAT_STEPS.PRODUTO;
+      resposta.texto = perguntasMap.fallback;
+      resposta.novoState.step = CHAT_STEPS.INICIO;
       break;
   }
 
   return resposta;
 }
+
 
