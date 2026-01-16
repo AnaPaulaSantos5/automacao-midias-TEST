@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { processarMensagem } from "../utils/chatEngine";
-import flyersBase from "../flyersBase";
+import produtos from "../data/produtos";
 
 export default function ChatBox() {
   const [mensagens, setMensagens] = useState([
@@ -11,130 +11,76 @@ export default function ChatBox() {
 
   const [input, setInput] = useState("");
 
-  const [state, setState] = useState({
-    step: "INICIO",
-    tipo: null,
+  const [estado, setEstado] = useState({
+    step: "inicio",
     produto: null,
     canal: null,
     formato: null,
-    campanha: null,
-    detalhes: {}
+    campanha: null
   });
 
-  function enviarMensagem() {
+  function enviarMensagem(e) {
+    e.preventDefault();
+
     if (!input.trim()) return;
 
-    const novaMensagemUsuario = {
-      autor: "user",
-      texto: input
-    };
+    const mensagemUsuario = input;
 
-    const resultado = processarMensagem(
-      state,
-      input,
-      obterFlyerConfig(state)
+    setMensagens((prev) => [
+      ...prev,
+      { autor: "user", texto: mensagemUsuario }
+    ]);
+
+    const flyerConfig = produtos[estado.produto];
+
+    const resposta = processarMensagem(
+      estado,
+      mensagemUsuario,
+      flyerConfig
     );
 
-    const novaMensagemBot = {
-      autor: "bot",
-      texto: resultado.texto
-    };
+    if (resposta?.texto) {
+      setMensagens((prev) => [
+        ...prev,
+        { autor: "bot", texto: resposta.texto }
+      ]);
+    }
 
-    setMensagens((prev) => [...prev, novaMensagemUsuario, novaMensagemBot]);
-    setState(resultado.novoState);
+    if (resposta?.novoState) {
+      setEstado(resposta.novoState);
+    }
+
     setInput("");
   }
 
-  function handleKeyDown(e) {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      enviarMensagem();
-    }
-  }
-
-  function obterFlyerConfig(state) {
-    if (!state.tipo || !state.produto) return null;
-
-    return (
-      flyersBase?.[state.tipo]?.[state.produto] || null
-    );
-  }
-
   return (
-    <div style={styles.container}>
-      <div style={styles.chat}>
-        {mensagens.map((msg, index) => (
+    <div style={{ maxWidth: 600, margin: "0 auto" }}>
+      <div style={{ minHeight: 300, padding: 16, border: "1px solid #ddd" }}>
+        {mensagens.map((msg, i) => (
           <div
-            key={index}
+            key={i}
             style={{
-              ...styles.mensagem,
-              alignSelf: msg.autor === "user" ? "flex-end" : "flex-start",
-              background: msg.autor === "user" ? "#DCF8C6" : "#EEE"
+              textAlign: msg.autor === "bot" ? "left" : "right",
+              marginBottom: 8
             }}
           >
+            <strong>{msg.autor === "bot" ? "Flyer AI" : "Você"}:</strong>{" "}
             {msg.texto}
           </div>
         ))}
       </div>
 
-      <div style={styles.inputArea}>
+      <form onSubmit={enviarMensagem} style={{ display: "flex", marginTop: 12 }}>
         <input
-          type="text"
-          placeholder="Digite sua mensagem..."
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          onKeyDown={handleKeyDown}
-          style={styles.input}
+          placeholder="Digite sua resposta..."
+          style={{ flex: 1, padding: 8 }}
         />
-        <button onClick={enviarMensagem} style={styles.botao}>
+        <button type="submit" style={{ padding: "8px 16px" }}>
           Enviar
         </button>
-      </div>
+      </form>
     </div>
   );
 }
-
-const styles = {
-  container: {
-    width: "100%",
-    maxWidth: 500,
-    margin: "40px auto",
-    border: "1px solid #ccc",
-    borderRadius: 8,
-    display: "flex",
-    flexDirection: "column",
-    height: "80vh"
-  },
-  chat: {
-    flex: 1,
-    padding: 12,
-    overflowY: "auto",
-    display: "flex",
-    flexDirection: "column",
-    gap: 8
-  },
-  mensagem: {
-    padding: "8px 12px",
-    borderRadius: 6,
-    maxWidth: "80%",
-    fontSize: 14
-  },
-  inputArea: {
-    display: "flex",
-    borderTop: "1px solid #ccc"
-  },
-  input: {
-    flex: 1,
-    padding: 10,
-    border: "none",
-    outline: "none",
-    fontSize: 14
-  },
-  botao: {
-    padding: "0 16px",
-    border: "none",
-    background: "#000",
-    color: "#fff",
-    cursor: "pointer"
-  }
-};
