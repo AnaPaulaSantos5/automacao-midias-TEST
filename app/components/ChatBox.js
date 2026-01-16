@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { identificarProduto } from "../utils/identificarProduto";
-import { proximaPergunta } from "../utils/motorChat";
+import { proximaPergunta } from "../utils/chatEngine";
 
 export default function ChatBox() {
   const [mensagens, setMensagens] = useState([
