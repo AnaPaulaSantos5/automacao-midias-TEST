@@ -1,132 +1,101 @@
-import perguntasMap from "./perguntasMap";
-import { validarFlyer } from "./validadorFlyer";
-import { detectarProduto } from "./detectarProduto";
-import { CHAT_STEPS } from "./stateMachine";
+import { normalizarCanal, normalizarFormato } from "./normalizacao";
+import { resolverProduto } from "./resolverProduto";
+import { gerarPrompt } from "./promptBuilder";
 
-/* =========================
-   NORMALIZADOR DE FORMATO
-========================= */
-function normalizarFormato(texto) {
-  if (!texto) return null;
+export function chatEngine(texto, estado) {
+  let state = { ...estado };
+  let reply = "";
+  let prompt = null;
 
-  const t = texto.toLowerCase().replace(/\s/g, "");
-
-  if (
-    t.includes("9:16") ||
-    t.includes("9x16") ||
-    t.includes("story") ||
-    t.includes("stories") ||
-    t.includes("vertical")
-  ) {
-    return "story";
-  }
-
-  if (t.includes("4:5")) {
-    return "feedVertical";
-  }
-
-  if (t.includes("1:1") || t.includes("feed")) {
-    return "feed";
-  }
-
-  return null;
-}
-
-/* =========================
-   CHAT ENGINE
-========================= */
-export function processarMensagem(state, mensagem, flyerConfig) {
-  const resposta = {
-    texto: "",
-    novoState: { ...state }
-  };
-
-  const texto = mensagem.toLowerCase();
-
-  /* =========================
-     DETECÇÃO DE PRODUTO
-  ========================= */
-  const produtoDetectado = detectarProduto(texto);
-
-  if (produtoDetectado) {
-    resposta.novoState = {
-      produto: produtoDetectado.produto,
-      subtipo: produtoDetectado.subtipo || null,
-      canal: null,
-      formato: null,
-      campanha: null,
-      step: CHAT_STEPS.CANAL
+  // RESET AUTOMÁTICO SE DETECTAR NOVO PRODUTO
+  const novoProduto = resolverProduto(texto);
+  if (novoProduto && novoProduto !== state.produto) {
+    return {
+      reply: "Esse flyer será para qual canal?",
+      state: { produto: novoProduto, etapa: "canal" }
     };
-
-    resposta.texto = perguntasMap.canal;
-    return resposta;
   }
 
-  /* =========================
-     FLUXO POR ETAPA
-  ========================= */
-  switch (state.step) {
-    case CHAT_STEPS.INICIO:
-      resposta.texto = perguntasMap.produto;
-      resposta.novoState.step = CHAT_STEPS.PRODUTO;
+  switch (state.etapa) {
+    case "inicio":
+      reply = "Olá! Sou o Flyer AI. Me diga que tipo de flyer você deseja criar.";
+      state.etapa = "produto";
       break;
 
-    case CHAT_STEPS.CANAL: {
-      if (!texto.includes("insta") && !texto.includes("whats")) {
-        resposta.texto = "Canal inválido. Escolha Instagram ou WhatsApp.";
-        return resposta;
+    case "produto":
+      if (!novoProduto) {
+        reply = "Não consegui identificar o produto. Pode repetir?";
+        break;
       }
-
-      const canal = texto.includes("whats") ? "whatsapp" : "instagram";
-
-      resposta.novoState.canal = canal;
-      resposta.novoState.step =
-        canal === "instagram" ? CHAT_STEPS.FORMATO : CHAT_STEPS.CAMPANHA;
-
-      resposta.texto =
-        canal === "instagram"
-          ? perguntasMap.formato
-          : perguntasMap.campanha;
-
+      state.produto = novoProduto;
+      state.etapa = "canal";
+      reply = "Esse flyer será para qual canal?";
       break;
-    }
 
-    case CHAT_STEPS.FORMATO: {
-      const formatoNormalizado = normalizarFormato(texto);
-
-      if (!formatoNormalizado) {
-        resposta.texto =
-          "Formato inválido. Use 1:1 (Feed), 4:5 (Feed Vertical) ou 9:16 (Stories).";
-        return resposta;
+    case "canal":
+      const canal = normalizarCanal(texto);
+      if (!canal) {
+        reply = "Pode ser Instagram ou WhatsApp.";
+        break;
       }
-
-      resposta.novoState.formato = formatoNormalizado;
-      resposta.novoState.step = CHAT_STEPS.CAMPANHA;
-      resposta.texto = perguntasMap.campanha;
-      break;
-    }
-
-    case CHAT_STEPS.CAMPANHA:
-      resposta.novoState.campanha =
-        texto === "nenhuma" || texto === "não" ? null : mensagem;
-
-      resposta.novoState.step = CHAT_STEPS.FINAL;
+      state.canal = canal;
+      state.etapa = "formato";
+      reply = "Qual formato você deseja? (1:1 | 4:5 | 9:16)";
       break;
 
-    case CHAT_STEPS.FINAL: {
-      const validacao = validarFlyer(flyerConfig, resposta.novoState);
+    case "formato":
+      const formato = normalizarFormato(texto);
+      if (!formato) {
+        reply = "Formato inválido. Pode ser 1:1, 4:5 ou 9:16.";
+        break;
+      }
+      state.formato = formato;
 
-      resposta.texto = validacao.valido
-        ? "Perfeito! Já tenho todas as informações iniciais para criar seu flyer."
-        : `Faltam informações: ${validacao.erros.join(", ")}`;
-
+      if (state.produto === "consorcio") {
+        state.etapa = "modelo";
+        reply = "Você prefere modelo A (sem tabela) ou B (com tabela)?";
+      } else {
+        state.etapa = "final";
+      }
       break;
-    }
 
-    default:
-      resposta.texto = perguntasMap.produto;
-      resposta.novoState.step = CHAT_STEPS.PRODUTO;
+    case "modelo":
+      state.modelo = texto.toUpperCase().includes("B") ? "B" : "A";
+
+      if (state.modelo === "B") {
+        state.etapa = "tabela";
+        reply = "Informe o cabeçalho da tabela (separado por vírgula).";
+      } else {
+        state.etapa = "final";
+      }
+      break;
+
+    case "tabela":
+      state.tabela = {
+        cabecalho: texto.split(",").map(t => t.trim()),
+        valores: [],
+        rodape: ""
+      };
+      state.etapa = "valores";
+      reply = "Informe os valores da tabela (uma linha por mensagem).";
+      break;
+
+    case "valores":
+      state.tabela.valores.push(texto);
+      reply = "Deseja adicionar mais uma linha? (ou digite 'continuar')";
+      state.etapa = "rodape";
+      break;
+
+    case "rodape":
+      state.tabela.rodape = texto;
+      state.etapa = "final";
+      break;
+
+    case "final":
+      prompt = gerarPrompt(state);
+      reply = "Perfeito! Aqui está o prompt do flyer.";
+      break;
   }
 
-  return resposta;
+  return { reply, state, prompt };
 }
