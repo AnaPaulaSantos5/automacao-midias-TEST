@@ -5,10 +5,10 @@
  * Retorna respostas ou prompt final pronto para geração de imagem
  */
 
-import { fluxoConsorcio } from './fluxoConsorcio';
-import { fluxoSeguro } from './fluxoSeguro';
-import { fluxoBeneficios } from './fluxoBeneficios';
-import { buildPromptFromTemplate } from './buildPromptFromTemplate';
+import { fluxoConsorcio } from '../fluxoConsorcio';
+import { fluxoSeguro } from '../fluxoSeguro';
+import { fluxoBeneficios } from '../fluxoBeneficios';
+import { buildPromptFromTemplate } from '../buildPromptFromTemplate';
 
 export function chatEngine(message, context = {}) {
   const texto = (message || '').trim();
