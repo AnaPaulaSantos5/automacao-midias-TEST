@@ -1,42 +1,49 @@
-"use client";
-import { useState } from "react";
-import { chatEngine } from "../utils/chatEngine";
+'use client';
+
+import { useState, useRef } from 'react';
+import { chatEngine } from '@/app/utils/chatEngine';
 
 export default function ChatBox() {
   const [messages, setMessages] = useState([]);
-  const [input, setInput] = useState("");
-  const [state, setState] = useState({ etapa: "inicio" });
+  const [input, setInput] = useState('');
+  const contextRef = useRef({}); // 🔴 ESSENCIAL
 
-  function enviar() {
+  const sendMessage = () => {
     if (!input.trim()) return;
 
-    const res = chatEngine(input, state);
+    const userMsg = {
+      role: 'user',
+      content: input
+    };
+
+    const botMsg = chatEngine(input, contextRef.current);
 
     setMessages(prev => [
       ...prev,
-      { from: "user", text: input },
-      { from: "bot", text: res.reply },
-      ...(res.prompt ? [{ from: "bot", text: res.prompt }] : [])
+      userMsg,
+      botMsg
     ]);
 
-    setState(res.state);
-    setInput("");
-  }
+    setInput('');
+  };
 
   return (
     <div>
       <div>
         {messages.map((m, i) => (
-          <p key={i}><b>{m.from}:</b> {m.text}</p>
+          <div key={i}>
+            <strong>{m.role}:</strong> {m.content}
+          </div>
         ))}
       </div>
 
       <input
         value={input}
         onChange={e => setInput(e.target.value)}
-        onKeyDown={e => e.key === "Enter" && enviar()}
+        onKeyDown={e => e.key === 'Enter' && sendMessage()}
       />
-      <button onClick={enviar}>Enviar</button>
+
+      <button onClick={sendMessage}>Enviar</button>
     </div>
   );
 }
