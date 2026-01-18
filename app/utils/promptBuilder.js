@@ -1,4 +1,4 @@
-import { produtos } from "@/data/produtos";
+import { produtos } from "../data/produtos";
 
 export function gerarPrompt(state) {
   const produto = produtos[state.produto];
