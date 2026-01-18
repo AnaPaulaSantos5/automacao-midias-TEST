@@ -35,6 +35,7 @@ export function chatEngine(message, context = {}) {
       context.produto = produto;
       context.area = produto.area;
 
+      // Fluxos separados
       if (produto.key === 'consorcio') {
         context.etapa = 'CONSORCIO_TIPO';
         return responder('Qual tipo de consórcio? Imóvel, Automóvel ou Pesados?');
@@ -50,7 +51,6 @@ export function chatEngine(message, context = {}) {
         return responder('Qual produto deseja criar? Saúde, Odonto ou Pet?');
       }
 
-      context.etapa = 'START';
       return responder('Houve um problema. Vamos tentar novamente.');
     }
 
@@ -80,7 +80,7 @@ export function chatEngine(message, context = {}) {
     }
 
     case 'CONSORCIO_CAMPANHA': {
-      context.textoPrincipal = texto; // texto principal = campanha
+      context.textoPrincipal = texto; // Campanha = texto principal
       context.etapa = 'TABELA_COLUNAS';
       return responder(
         'Agora me informe os títulos das colunas da tabela (ou digite "padrão")'
@@ -102,17 +102,15 @@ export function chatEngine(message, context = {}) {
     case 'TABELA_LINHAS': {
       if (texto.toLowerCase() === 'continuar') {
         context.etapa = 'TEXTO_COMPLEMENTAR';
-        return responder('Deseja adicionar um texto complementar? (opcional)');
+        return responder('Deseja adicionar um texto complementar? (opcional, digite "Não" se não houver)');
       }
       context.tabela.linhas.push(texto);
       return responder('Linha adicionada. Envie outra ou digite "continuar".');
     }
 
-    /* =========================
-       TEXTO COMPLEMENTAR
-    ========================= */
     case 'TEXTO_COMPLEMENTAR': {
-      context.textoComplementar = texto || null;
+      context.textoComplementar =
+        texto.toLowerCase() === 'não' || texto.toLowerCase() === 'nao' ? null : texto;
       context.etapa = 'CONFIRMACAO';
       return resumo(context);
     }
@@ -145,7 +143,8 @@ export function chatEngine(message, context = {}) {
     }
 
     case 'SEGURO_TEXTO_COMPLEMENTAR': {
-      context.textoComplementar = texto || null;
+      context.textoComplementar =
+        texto.toLowerCase() === 'não' || texto.toLowerCase() === 'nao' ? null : texto;
       context.etapa = 'CONFIRMACAO';
       return resumo(context);
     }
@@ -162,11 +161,7 @@ export function chatEngine(message, context = {}) {
     }
 
     case 'BENEFICIO_LISTA': {
-      if (texto.toUpperCase() === 'A') {
-        context.beneficios = 'PADRAO';
-      } else {
-        context.beneficios = 'CUSTOM';
-      }
+      context.beneficios = texto.toUpperCase() === 'A' ? 'PADRAO' : 'CUSTOM';
       context.etapa = 'CONFIRMACAO';
       return resumo(context);
     }
@@ -194,7 +189,6 @@ export function chatEngine(message, context = {}) {
 /* =========================
    HELPERS
 ========================= */
-
 function responder(content) {
   return {
     role: 'assistant',
@@ -208,7 +202,7 @@ function resumo(context) {
     context.subproduto ? `Tipo: ${context.subproduto}` : null,
     context.meses ? `Meses: ${context.meses}` : null,
     context.textoPrincipal ? `Texto principal: ${context.textoPrincipal}` : null,
-    context.textoComplementar ? `Texto complementar: ${context.textoComplementar}` : null,
+    context.textoComplementar ? `Texto complementar: ${context.textoComplementar}` : 'Não',
     context.beneficios ? `Benefícios: ${context.beneficios}` : null
   ]
     .filter(Boolean)
