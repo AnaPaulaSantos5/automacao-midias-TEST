@@ -203,13 +203,17 @@ export function chatEngine(message, context = {}) {
    HELPERS
 ========================= */
 
-function responder(texto) {
-  return { texto };
+function responder(content) {
+  return {
+    role: 'assistant',
+    content
+  };
 }
 
 function resumo(context) {
   return {
-    texto: `Perfeito! Confira os dados:
+    role: 'assistant',
+    content: `Perfeito! Confira os dados:
 
 Produto: ${context.produto.nomeExibicao}
 Canal: ${context.canal}
