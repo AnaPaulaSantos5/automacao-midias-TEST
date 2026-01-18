@@ -1,63 +1,28 @@
-import identidades from "../flyersBase/index";
+export function buildPrompt(context) {
+  return `
+Crie um flyer seguindo EXATAMENTE esta identidade visual:
 
-export function buildFlyerPayload(contexto) {
-  const identidade = identidades[contexto.area];
+Marca: ${context.produto.identidadeVisual.marca}
+Paleta: ${context.produto.identidadeVisual.paleta.join(', ')}
 
-  const dimensoes = {
-    instagram: {
-      feed: "1080x1080",
-      "feed-vertical": "1080x1350",
-      stories: "1080x1920"
-    },
-    whatsapp: {
-      status: "1080x1920",
-      quadrado: "1080x1080"
-    }
-  };
+Produto: ${context.produto.nomeExibicao}
+Canal: ${context.canal}
+Formato: ${context.formato}
 
-  return {
-    produto: {
-      area: contexto.area,
-      tipo: contexto.tipo,
-      subtipo: contexto.subtipo
-    },
+Texto principal:
+${context.textoPrincipal || 'Gerar conforme identidade da marca'}
 
-    canal: {
-      nome: contexto.canal,
-      formato: contexto.formato,
-      dimensao: dimensoes[contexto.canal][contexto.formato]
-    },
+${context.modelo === 'B' ? `
+Tabela:
+Colunas: ${context.tabela.colunas.join(' | ')}
+Linhas:
+${context.tabela.linhas.join('\n')}
+` : ''}
 
-    campanha: {
-      titulo: gerarTitulo(contexto),
-      destaque: contexto.campanha || "Sem campanha"
-    },
+Texto complementar:
+${context.textoComplementar || 'Gerar conforme identidade visual'}
 
-    identidadeVisual: identidade,
-
-    regrasCriacao: {
-      usarTemplateBase: true,
-      manterIdentidadeVisual: true,
-      evitarElementosNaoPadrao: true
-    },
-
-    origem: {
-      criadoVia: "chat",
-      dataCriacao: new Date().toISOString()
-    }
-  };
-}
-
-function gerarTitulo(contexto) {
-  if (contexto.tipo === "consorcio") {
-    return `Consórcio ${capitalize(contexto.subtipo)}`;
-  }
-  if (contexto.tipo === "seguro") {
-    return `Seguro ${capitalize(contexto.subtipo)}`;
-  }
-  return "Flyer Confi";
-}
-
-function capitalize(text) {
-  return text.charAt(0).toUpperCase() + text.slice(1);
+Texto legal:
+${context.textoLegal || 'Gerar conforme regras da campanha'}
+`;
 }
