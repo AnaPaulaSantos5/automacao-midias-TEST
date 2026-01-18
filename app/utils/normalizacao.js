@@ -1,27 +1,18 @@
-export function normalizarTexto(texto = "") {
-  return texto
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .trim();
-}
+export function normalizarFormato(input) {
+  const v = input.toLowerCase().replace(/\s/g, '');
 
-export function normalizarFormato(texto) {
-  const t = normalizarTexto(texto);
-
-  if (t.includes("9:16") || t.includes("9x16") || t.includes("stories"))
-    return "9:16";
-  if (t.includes("4:5") || t.includes("4x5") || t.includes("vertical"))
-    return "4:5";
-  if (t.includes("1:1") || t.includes("quadrado"))
-    return "1:1";
+  if (v === '1:1' || v === '1x1') return '1:1';
+  if (v === '4:5' || v === '4x5') return '4:5';
+  if (v === '9:16' || v === '9x16') return '9:16';
 
   return null;
 }
 
-export function normalizarCanal(texto) {
-  const t = normalizarTexto(texto);
-  if (t.includes("whats")) return "whatsapp";
-  if (t.includes("insta")) return "instagram";
+export function normalizarCanal(input) {
+  const v = input.toLowerCase();
+
+  if (v.includes('insta')) return 'instagram';
+  if (v.includes('what')) return 'whatsapp';
+
   return null;
 }
