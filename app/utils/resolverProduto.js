@@ -1,13 +1,14 @@
-import { produtos } from "../data/produtos";
-import { normalizarTexto } from "./normalizacao";
+import { produtos } from '../../data/produtos';
 
 export function resolverProduto(texto) {
-  const t = normalizarTexto(texto);
+  const t = texto.toLowerCase();
 
-  for (const key of Object.keys(produtos)) {
-    const nome = normalizarTexto(produtos[key].nomeExibicao);
-    if (t.includes(nome.split(" ")[0])) {
-      return key;
+  for (const key in produtos) {
+    if (t.includes(key.replace('_', ' '))) {
+      return {
+        key,
+        ...produtos[key]
+      };
     }
   }
 
