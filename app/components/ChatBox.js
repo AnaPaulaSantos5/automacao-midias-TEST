@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { chatEngine } from '@/app/utils/chatEngine';
+import { chatEngine } from './app/utils/chatEngine';
 
 export default function ChatBox() {
   const [messages, setMessages] = useState([]);
