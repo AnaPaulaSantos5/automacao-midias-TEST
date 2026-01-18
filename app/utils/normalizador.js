@@ -16,3 +16,37 @@ export function normalizarFormato(texto) {
 
   return null;
 }
+
+export function normalizarSubtipoConsorcio(texto) {
+  const t = texto.toLowerCase();
+
+  if (
+    t.includes('imóvel') ||
+    t.includes('imovel') ||
+    t.includes('casa') ||
+    t.includes('apart')
+  ) {
+    return 'imovel';
+  }
+
+  if (
+    t.includes('auto') ||
+    t.includes('carro') ||
+    t.includes('veículo') ||
+    t.includes('veiculo')
+  ) {
+    return 'auto';
+  }
+
+  if (
+    t.includes('pesado') ||
+    t.includes('caminhão') ||
+    t.includes('caminhao') ||
+    t.includes('ônibus') ||
+    t.includes('onibus')
+  ) {
+    return 'pesados';
+  }
+
+  return null;
+}
