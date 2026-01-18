@@ -1,117 +1,116 @@
 import { resolverProduto } from './resolverProduto';
-import { normalizarFormato, normalizarCanal } from './normalizador';
+import {
+  normalizarCanal,
+  normalizarFormato,
+  normalizarSubtipoConsorcio
+} from './normalizador';
+import { buildFlyerPayload } from './buildFlyerPayload';
 
 export function chatEngine(message, context) {
   const texto = message.trim();
 
   switch (context.etapa) {
-    case null:
-      context.etapa = 'START';
-      return responder('Olá! Sou o Flyer AI. Me diga que tipo de flyer você deseja criar.');
 
-    case 'START': {
+    case undefined:
+      context.etapa = 'PRODUTO';
+      return resposta('Olá! Sou o Flyer AI. Me diga qual produto você deseja divulgar.');
+
+    case 'PRODUTO': {
       const produto = resolverProduto(texto);
-      if (!produto) return responder('Não entendi o produto. Pode repetir?');
+      if (!produto) return resposta('Não entendi o produto. Pode repetir?');
 
       context.produto = produto;
-      context.area = produto.area;
       context.etapa = 'CANAL';
-      return responder('Esse flyer será para qual canal? Instagram ou WhatsApp');
+      return resposta('Esse flyer será para qual canal? Instagram ou WhatsApp');
     }
 
     case 'CANAL': {
       const canal = normalizarCanal(texto);
-      if (!canal) return responder('Canal inválido. Instagram ou WhatsApp?');
+      if (!canal) return resposta('Canal inválido.');
 
       context.canal = canal;
       context.etapa = 'FORMATO';
-      return responder('Qual formato? (1:1 | 4:5 | 9:16)');
+      return resposta('Qual formato? (1:1 | 4:5 | 9:16)');
     }
 
     case 'FORMATO': {
       const formato = normalizarFormato(texto);
-      if (!formato) return responder('Formato inválido. Use 1:1, 4:5 ou 9:16.');
+      if (!formato) return resposta('Formato inválido.');
 
       context.formato = formato;
 
       if (context.produto.key === 'consorcio') {
         context.etapa = 'CONSORCIO_TIPO';
-        return responder('Qual tipo de consórcio? Imóvel, Automóvel ou Pesados');
+        return resposta('Qual tipo de consórcio? Imóvel, Automóvel ou Pesados');
       }
 
       context.etapa = 'TEXTO_PRINCIPAL_ESCOLHA';
-      return responder('Deseja escrever a frase principal ou prefere que eu gere? (A/B)');
+      return resposta('Deseja escrever a frase principal ou prefere que eu gere? (A/B)');
     }
 
-    case 'CONSORCIO_TIPO':
-      context.subproduto = texto;
+    case 'CONSORCIO_TIPO': {
+      const subtipo = normalizarSubtipoConsorcio(texto);
+      if (!subtipo) return resposta('Tipo inválido.');
+
+      context.subtipo = subtipo;
       context.etapa = 'TEXTO_PRINCIPAL_ESCOLHA';
-      return responder('Deseja escrever o texto principal da campanha ou prefere que eu gere? (A/B)');
+      return resposta('Deseja escrever o texto da campanha ou prefere que eu gere? (A/B)');
+    }
 
     case 'TEXTO_PRINCIPAL_ESCOLHA':
       if (texto.toUpperCase() === 'A') {
         context.etapa = 'TEXTO_PRINCIPAL_INPUT';
-        return responder('Digite o texto principal:');
+        return resposta('Digite o texto principal:');
       }
       context.textoPrincipal = null;
-      context.etapa = context.produto.key === 'consorcio' ? 'MODELO' : 'TEXTO_COMPLEMENTAR';
-      return responder('Ok, vou gerar o texto automaticamente.');
+      context.etapa = context.produto.aceitaTabela ? 'MODELO' : 'CONFIRMACAO';
+      return resposta('Ok, vou gerar automaticamente.');
 
     case 'TEXTO_PRINCIPAL_INPUT':
       context.textoPrincipal = texto;
-      context.etapa = context.produto.key === 'consorcio' ? 'MODELO' : 'TEXTO_COMPLEMENTAR';
-      return responder('Perfeito. Deseja adicionar um texto complementar? (opcional)');
+      context.etapa = context.produto.aceitaTabela ? 'MODELO' : 'CONFIRMACAO';
+      return resposta('Perfeito.');
 
-    case 'MODELO':
-      context.modelo = texto.toUpperCase();
-      if (context.modelo === 'B') {
+    case 'MODELO': {
+      const m = texto.toUpperCase();
+      if (!['A', 'B'].includes(m)) return resposta('Digite A ou B.');
+
+      context.modelo = m;
+
+      if (m === 'B') {
         context.tabela = { colunas: [], linhas: [] };
         context.etapa = 'TABELA_COLUNAS';
-        return responder('Informe o cabeçalho da tabela (separado por vírgula).');
+        return resposta('Informe o cabeçalho da tabela (separado por vírgula).');
       }
-      context.etapa = 'TEXTO_COMPLEMENTAR';
-      return responder('Deseja adicionar um texto complementar? (opcional)');
+
+      context.etapa = 'CONFIRMACAO';
+      return resposta('Modelo simples selecionado.');
+    }
 
     case 'TABELA_COLUNAS':
       context.tabela.colunas = texto.split(',').map(v => v.trim());
       context.etapa = 'TABELA_LINHAS';
-      return responder('Informe os valores da tabela (uma linha por mensagem). Digite "continuar" para finalizar.');
+      return resposta('Informe uma linha da tabela ou digite "continuar".');
 
     case 'TABELA_LINHAS':
       if (texto.toLowerCase() === 'continuar') {
-        context.etapa = 'TEXTO_COMPLEMENTAR';
-        return responder('Deseja adicionar um texto complementar? (opcional)');
+        context.etapa = 'CONFIRMACAO';
+        return resposta('Tudo certo.');
       }
       context.tabela.linhas.push(texto);
-      return responder('Linha adicionada. Digite outra ou "continuar".');
+      return resposta('Linha adicionada.');
 
-    case 'TEXTO_COMPLEMENTAR':
-      context.textoComplementar = texto || null;
-      context.etapa = 'TEXTO_LEGAL';
-      return responder('Deseja adicionar um texto legal? (opcional)');
-
-    case 'TEXTO_LEGAL':
-      context.textoLegal = texto || null;
-      context.etapa = 'CONFIRMACAO';
-      return resumo(context);
+    case 'CONFIRMACAO': {
+      const payload = buildFlyerPayload(context);
+      context.etapa = 'FINAL';
+      return resposta(`PROMPT PARA APROVAÇÃO:\n\n${payload.prompt}`);
+    }
 
     default:
-      return responder('Estado inválido.');
+      return resposta('Fluxo encerrado.');
   }
 }
 
-function responder(texto) {
+function resposta(texto) {
   return { texto };
-}
-
-function resumo(context) {
-  return {
-    texto: `Confira os dados:
-
-Produto: ${context.produto.nomeExibicao}
-Canal: ${context.canal}
-Formato: ${context.formato}
-
-Posso gerar o prompt do flyer? (Sim / Ajustar)`
-  };
 }
