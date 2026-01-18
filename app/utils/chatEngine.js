@@ -1,17 +1,9 @@
 import { resolverProduto } from './resolverProduto';
-import {
-  normalizarCanal,
-  normalizarFormato,
-  normalizarSubtipoConsorcio
-} from './normalizador';
 
-/* =========================
-   CHAT ENGINE PRINCIPAL
-========================= */
 export function chatEngine(message, context = {}) {
   const texto = (message || '').trim();
 
-  // Estado inicial
+  // 🔴 Estado inicial
   if (!context.etapa) {
     context.etapa = 'START';
     return responder(
@@ -20,8 +12,9 @@ export function chatEngine(message, context = {}) {
   }
 
   switch (context.etapa) {
+
     /* =========================
-       START
+       START - Escolha do produto
     ========================= */
     case 'START': {
       const produto = resolverProduto(texto);
@@ -35,34 +28,36 @@ export function chatEngine(message, context = {}) {
       context.produto = produto;
       context.area = produto.area;
 
-      // Fluxos separados
+      // Fluxo Consórcio
       if (produto.key === 'consorcio') {
         context.etapa = 'CONSORCIO_TIPO';
         return responder('Qual tipo de consórcio? Imóvel, Automóvel ou Pesados?');
       }
 
-      if (produto.key === 'seguro') {
+      // Fluxo Seguro
+      if (produto.area === 'confi-seguros') {
         context.etapa = 'SEGURO_TIPO';
         return responder('Qual seguro deseja criar? Residencial, Auto ou Vida?');
       }
 
-      if (produto.key === 'beneficios') {
+      // Fluxo Benefícios
+      if (produto.area === 'confi-beneficios') {
         context.etapa = 'BENEFICIO_TIPO';
         return responder('Qual produto deseja criar? Saúde, Odonto ou Pet?');
       }
 
-      return responder('Houve um problema. Vamos tentar novamente.');
+      return responder('Houve um problema ao identificar o produto. Vamos recomeçar.');
     }
 
     /* =========================
        CONSÓRCIO
     ========================= */
     case 'CONSORCIO_TIPO': {
-      const subtipo = normalizarSubtipoConsorcio(texto);
-      if (!subtipo) {
+      const tipo = texto.toLowerCase();
+      if (!context.produto.subtipos[tipo]) {
         return responder('Tipo inválido. Use: Imóvel, Automóvel ou Pesados.');
       }
-      context.subproduto = subtipo;
+      context.subproduto = context.produto.subtipos[tipo];
       context.etapa = 'CONSORCIO_MESES';
       return responder('Quantos meses terá o grupo? (Ex: 200)');
     }
@@ -70,107 +65,47 @@ export function chatEngine(message, context = {}) {
     case 'CONSORCIO_MESES': {
       const meses = parseInt(texto);
       if (isNaN(meses) || meses <= 0) {
-        return responder('Número de meses inválido. Digite apenas números, ex: 200');
+        return responder('Número de meses inválido. Digite apenas números, ex: 200.');
       }
       context.meses = meses;
       context.etapa = 'CONSORCIO_CAMPANHA';
-      return responder(
-        'Qual campanha deseja destacar? Ex: parcelas reduzidas, taxa zero, lance embutido…'
-      );
+      return responder('Qual campanha deseja destacar? Ex: parcelas reduzidas, taxa zero, lance embutido…');
     }
 
     case 'CONSORCIO_CAMPANHA': {
-      context.textoPrincipal = texto; // Campanha = texto principal
-      context.etapa = 'TABELA_COLUNAS';
-      return responder(
-        'Agora me informe os títulos das colunas da tabela (ou digite "padrão")'
-      );
+      context.textoPrincipal = texto; // Texto principal = campanha
+      context.etapa = 'CONSORCIO_TABELA_COLUNAS';
+      return responder('Agora me informe os títulos das colunas da tabela (ou digite "padrão")');
     }
 
-    case 'TABELA_COLUNAS': {
+    case 'CONSORCIO_TABELA_COLUNAS': {
       context.tabela = { colunas: [], linhas: [] };
-      context.tabela.colunas =
-        texto.toLowerCase() === 'padrão'
-          ? ['Crédito', 'Taxa Adm', 'Parcela PF', 'Parcela PJ']
-          : texto.split(',').map(v => v.trim());
-      context.etapa = 'TABELA_LINHAS';
-      return responder(
-        'Envie as linhas da tabela uma por mensagem ou digite "continuar" quando terminar.'
-      );
+      if (texto.toLowerCase() !== 'padrão') {
+        context.tabela.colunas = texto.split(',').map(v => v.trim());
+      } else {
+        context.tabela.colunas = ['Crédito', 'Taxa Adm', 'Parcela Pessoa Física', 'Parcela Pessoa Jurídica'];
+      }
+      context.etapa = 'CONSORCIO_TABELA_LINHAS';
+      return responder('Envie as linhas da tabela uma por mensagem ou digite "continuar" quando terminar.');
     }
 
-    case 'TABELA_LINHAS': {
+    case 'CONSORCIO_TABELA_LINHAS': {
       if (texto.toLowerCase() === 'continuar') {
-        context.etapa = 'TEXTO_COMPLEMENTAR';
+        context.etapa = 'CONSORCIO_TEXTO_COMPLEMENTAR';
         return responder('Deseja adicionar um texto complementar? (opcional, digite "Não" se não houver)');
       }
-      context.tabela.linhas.push(texto);
+      context.tabela.linhas.push(texto.split(',').map(v => v.trim()));
       return responder('Linha adicionada. Envie outra ou digite "continuar".');
     }
 
-    case 'TEXTO_COMPLEMENTAR': {
-      context.textoComplementar =
-        texto.toLowerCase() === 'não' || texto.toLowerCase() === 'nao' ? null : texto;
-      context.etapa = 'CONFIRMACAO';
-      return resumo(context);
+    case 'CONSORCIO_TEXTO_COMPLEMENTAR': {
+      context.textoComplementar = texto.toLowerCase() === 'não' ? null : texto;
+      context.etapa = 'CONSORCIO_CONFIRMACAO';
+      return resumoConsorcio(context);
     }
 
-    /* =========================
-       SEGUROS
-    ========================= */
-    case 'SEGURO_TIPO': {
-      context.subproduto = texto;
-      context.etapa = 'SEGURO_TEXTO_PRINCIPAL';
-      return responder(
-        'Deseja escrever a frase principal ou prefere que eu gere automaticamente? (A = escrever | B = gerar)'
-      );
-    }
-
-    case 'SEGURO_TEXTO_PRINCIPAL': {
-      if (texto.toUpperCase() === 'A') {
-        context.etapa = 'SEGURO_TEXTO_INPUT';
-        return responder('Digite o texto principal do flyer:');
-      }
-      context.textoPrincipal = null; // será gerado automaticamente
-      context.etapa = 'SEGURO_TEXTO_COMPLEMENTAR';
-      return responder('Perfeito. Vou gerar o texto automaticamente.');
-    }
-
-    case 'SEGURO_TEXTO_INPUT': {
-      context.textoPrincipal = texto;
-      context.etapa = 'SEGURO_TEXTO_COMPLEMENTAR';
-      return responder('Texto salvo. Deseja adicionar um texto complementar? (opcional)');
-    }
-
-    case 'SEGURO_TEXTO_COMPLEMENTAR': {
-      context.textoComplementar =
-        texto.toLowerCase() === 'não' || texto.toLowerCase() === 'nao' ? null : texto;
-      context.etapa = 'CONFIRMACAO';
-      return resumo(context);
-    }
-
-    /* =========================
-       BENEFÍCIOS
-    ========================= */
-    case 'BENEFICIO_TIPO': {
-      context.subproduto = texto;
-      context.etapa = 'BENEFICIO_LISTA';
-      return responder(
-        'Deseja usar a lista padrão de benefícios ou personalizar? (A = padrão | B = personalizar)'
-      );
-    }
-
-    case 'BENEFICIO_LISTA': {
-      context.beneficios = texto.toUpperCase() === 'A' ? 'PADRAO' : 'CUSTOM';
-      context.etapa = 'CONFIRMACAO';
-      return resumo(context);
-    }
-
-    /* =========================
-       CONFIRMAÇÃO
-    ========================= */
-    case 'CONFIRMACAO': {
-      if (texto.toLowerCase().includes('sim')) {
+    case 'CONSORCIO_CONFIRMACAO': {
+      if (texto.toLowerCase() === 'sim') {
         return {
           gerarPrompt: true,
           context
@@ -180,35 +115,142 @@ export function chatEngine(message, context = {}) {
       return responder('Ok. Vamos ajustar. Me diga novamente o produto.');
     }
 
+    /* =========================
+       SEGUROS
+    ========================= */
+    case 'SEGURO_TIPO': {
+      const tipo = texto.toLowerCase();
+      const seguroMap = {
+        residencial: 'seguro_residencial',
+        auto: 'seguro_auto',
+        vida: 'seguro_vida'
+      };
+      if (!seguroMap[tipo]) {
+        return responder('Tipo inválido. Use: Residencial, Auto ou Vida.');
+      }
+      context.produto = produtos[seguroMap[tipo]];
+      context.etapa = 'SEGURO_TEXTO_PRINCIPAL';
+      return responder('Deseja escrever a frase principal ou prefere que eu gere automaticamente? (A = escrever | B = gerar)');
+    }
+
+    case 'SEGURO_TEXTO_PRINCIPAL': {
+      if (texto.toUpperCase() === 'A') {
+        context.etapa = 'SEGURO_TEXTO_PRINCIPAL_INPUT';
+        return responder('Digite o texto principal do seguro:');
+      }
+      context.textoPrincipal = null; // Irá gerar automaticamente
+      context.etapa = 'SEGURO_TEXTO_COMPLEMENTAR';
+      return responder('Perfeito. Vou gerar o texto automaticamente. Deseja adicionar um texto complementar? (opcional)');
+    }
+
+    case 'SEGURO_TEXTO_PRINCIPAL_INPUT': {
+      context.textoPrincipal = texto;
+      context.etapa = 'SEGURO_TEXTO_COMPLEMENTAR';
+      return responder('Texto salvo. Deseja adicionar um texto complementar? (opcional, digite "Não" se não houver)');
+    }
+
+    case 'SEGURO_TEXTO_COMPLEMENTAR': {
+      context.textoComplementar = texto.toLowerCase() === 'não' ? null : texto;
+      context.etapa = 'SEGURO_CONFIRMACAO';
+      return resumoSeguro(context);
+    }
+
+    case 'SEGURO_CONFIRMACAO': {
+      if (texto.toLowerCase() === 'sim') {
+        return {
+          gerarPrompt: true,
+          context
+        };
+      }
+      context.etapa = 'START';
+      return responder('Ok. Vamos ajustar. Me diga novamente o produto.');
+    }
+
+    /* =========================
+       BENEFÍCIOS
+    ========================= */
+    case 'BENEFICIO_TIPO': {
+      const tipo = texto.toLowerCase();
+      const beneficioMap = {
+        saude: 'plano_saude',
+        odonto: 'seguro_odonto',
+        pet: 'seguro_pet'
+      };
+      if (!beneficioMap[tipo]) {
+        return responder('Produto inválido. Use: Saúde, Odonto ou Pet.');
+      }
+      context.produto = produtos[beneficioMap[tipo]];
+      context.etapa = 'BENEFICIO_LISTA';
+      return responder('Deseja usar a lista padrão de benefícios ou personalizar? (A = padrão | B = personalizar)');
+    }
+
+    case 'BENEFICIO_LISTA': {
+      if (texto.toUpperCase() === 'A') {
+        context.listaPadrao = true;
+      } else {
+        context.listaPadrao = false;
+      }
+      context.etapa = 'BENEFICIO_CONFIRMACAO';
+      return resumoBeneficio(context);
+    }
+
+    case 'BENEFICIO_CONFIRMACAO': {
+      if (texto.toLowerCase() === 'sim') {
+        return {
+          gerarPrompt: true,
+          context
+        };
+      }
+      context.etapa = 'START';
+      return responder('Ok. Vamos ajustar. Me diga novamente o produto.');
+    }
+
+    /* =========================
+       DEFAULT
+    ========================= */
     default:
       context.etapa = 'START';
-      return responder('Houve um problema no fluxo. Vamos recomeçar.');
+      return responder(
+        'Houve um problema no fluxo. Vamos recomeçar. Qual flyer deseja criar?'
+      );
   }
 }
 
 /* =========================
    HELPERS
 ========================= */
+
 function responder(content) {
-  return {
-    role: 'assistant',
-    content
-  };
+  return { role: 'assistant', content };
 }
 
-function resumo(context) {
-  const baseResumo = [
-    `Produto: ${context.produto.nomeExibicao}`,
-    context.subproduto ? `Tipo: ${context.subproduto}` : null,
-    context.meses ? `Meses: ${context.meses}` : null,
-    context.textoPrincipal ? `Texto principal: ${context.textoPrincipal}` : null,
-    context.textoComplementar ? `Texto complementar: ${context.textoComplementar}` : 'Não',
-    context.beneficios ? `Benefícios: ${context.beneficios}` : null
-  ]
-    .filter(Boolean)
-    .join('\n');
+function resumoConsorcio(context) {
+  return responder(`Perfeito! Confira os dados:
 
-  return responder(
-    `Perfeito! Confira os dados:\n${baseResumo}\nPrompt pronto para gerar? (Sim / Ajustar)`
-  );
+Produto: ${context.produto.nomeExibicao}
+Tipo: ${context.subproduto.nomeExibicao}
+Meses: ${context.meses}
+Texto principal: ${context.textoPrincipal}
+Texto complementar: ${context.textoComplementar || 'Não'}
+
+Prompt pronto para gerar? (Sim / Ajustar)`);
+}
+
+function resumoSeguro(context) {
+  return responder(`Perfeito! Confira os dados:
+
+Produto: ${context.produto.nomeExibicao}
+Texto principal: ${context.textoPrincipal || 'Será gerado automaticamente'}
+Texto complementar: ${context.textoComplementar || 'Não'}
+
+Prompt pronto para gerar? (Sim / Ajustar)`);
+}
+
+function resumoBeneficio(context) {
+  return responder(`Perfeito! Confira os dados:
+
+Produto: ${context.produto.nomeExibicao}
+Lista padrão: ${context.listaPadrao ? 'Sim' : 'Personalizada'}
+
+Prompt pronto para gerar? (Sim / Ajustar)`);
 }
