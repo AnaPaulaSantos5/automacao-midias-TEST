@@ -5,9 +5,9 @@
  * Retorna respostas ou prompt final pronto para geração de imagem
  */
 
-import { fluxoConsorcio } from '../fluxoConsorcio';
-import { fluxoSeguro } from '../fluxoSeguro';
-import { fluxoBeneficios } from '../fluxoBeneficios';
+import { fluxoConsorcio } from '../flows/fluxoConsorcio';
+import { fluxoSeguro } from '../flows/fluxoSeguro';
+import { fluxoBeneficios } from '../flows/fluxoBeneficios';
 import { buildPromptFromTemplate } from '../buildPromptFromTemplate';
 
 export function chatEngine(message, context = {}) {
