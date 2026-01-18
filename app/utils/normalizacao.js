@@ -1,18 +1,20 @@
-export function normalizarFormato(input) {
-  const v = input.toLowerCase().replace(/\s/g, '');
-
-  if (v === '1:1' || v === '1x1') return '1:1';
-  if (v === '4:5' || v === '4x5') return '4:5';
-  if (v === '9:16' || v === '9x16') return '9:16';
-
+export function normalizarCanal(texto) {
+  const t = texto.toLowerCase();
+  if (t.includes('insta')) return 'Instagram';
+  if (t.includes('whats')) return 'WhatsApp';
   return null;
 }
 
-export function normalizarCanal(input) {
-  const v = input.toLowerCase();
+export function normalizarFormato(texto) {
+  const t = texto.replace(/\s/g, '');
+  if (['1:1', '4:5', '9:16'].includes(t)) return t;
+  return null;
+}
 
-  if (v.includes('insta')) return 'instagram';
-  if (v.includes('what')) return 'whatsapp';
-
+export function normalizarSubtipoConsorcio(texto) {
+  const t = texto.toLowerCase();
+  if (t.includes('imov')) return 'imovel';
+  if (t.includes('auto') || t.includes('carro')) return 'automovel';
+  if (t.includes('pesad') || t.includes('caminh')) return 'pesados';
   return null;
 }
