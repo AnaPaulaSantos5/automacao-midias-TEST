@@ -1,52 +1,28 @@
-import { produtos } from "../data/produtos";
-
-export function gerarPrompt(state) {
-  const produto = produtos[state.produto];
-
-  let prompt = `
+export function buildPrompt(context) {
+  return `
 Crie um flyer seguindo EXATAMENTE esta identidade visual:
 
-Marca: ${produto.identidadeVisual.marca}
-Paleta: ${produto.identidadeVisual.paleta.join(", ")}
+Marca: ${context.produto.identidadeVisual.marca}
+Paleta: ${context.produto.identidadeVisual.paleta.join(', ')}
 
-Produto: ${produto.nomeExibicao}
-Canal: ${state.canal}
-Formato: ${state.formato}
-`;
+Produto: ${context.produto.nomeExibicao}
+Canal: ${context.canal}
+Formato: ${context.formato}
 
-  // CONSÓRCIO – MODELOS
-  if (state.produto === "consorcio") {
-    if (state.modelo === "A") {
-      prompt += `
-Modelo A (emocional, SEM tabela):
-Imagem de pessoas conquistando sonhos (${state.subtipo || "bem material"}).
-Texto motivacional focado em conquista e planejamento.
-Layout inspirado no flyer de Seguro Residencial.
-`;
-    }
+Texto principal:
+${context.textoPrincipal || 'Gerar conforme identidade da marca'}
 
-    if (state.modelo === "B") {
-      prompt += `
-Modelo B (COM tabela):
-Tabela central com colunas:
-${state.tabela.cabecalho.join(" | ")}
+${context.modelo === 'B' ? `
+Tabela:
+Colunas: ${context.tabela.colunas.join(' | ')}
+Linhas:
+${context.tabela.linhas.join('\n')}
+` : ''}
 
-Valores:
-${state.tabela.valores.join("\n")}
+Texto complementar:
+${context.textoComplementar || 'Gerar conforme identidade visual'}
 
 Texto legal:
-${state.tabela.rodape}
+${context.textoLegal || 'Gerar conforme regras da campanha'}
 `;
-    }
-  }
-
-  // OUTROS PRODUTOS
-  if (state.produto !== "consorcio") {
-    prompt += `
-Layout seguindo fielmente o flyer-base descrito para ${produto.nomeExibicao}.
-Texto emocional, CTA visível e identidade preservada.
-`;
-  }
-
-  return prompt.trim();
 }
