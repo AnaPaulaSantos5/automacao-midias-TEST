@@ -1,41 +1,28 @@
 export function buildFlyerPayload(context) {
-  return {
-    produto: {
-      key: context.produto.key,
-      nome: context.produto.nomeExibicao,
-      area: context.produto.area,
-      identidadeVisual: context.produto.identidadeVisual
-    },
+  const { produto, canal, formato, textoPrincipal, tabela, subtipo } = context;
 
-    canal: context.canal,
-    formato: context.formato,
+  let prompt = `
+Crie um flyer seguindo EXATAMENTE esta identidade visual:
 
-    modelo: context.modelo || 'A',
+Marca: ${produto.identidadeVisual.marca}
+Paleta: ${produto.identidadeVisual.paleta.join(', ')}
+Canal: ${canal}
+Formato: ${formato}
+Produto: ${produto.nomeExibicao}${subtipo ? ' - ' + subtipo : ''}
 
-    consorcio: context.produto.key === 'consorcio'
-      ? {
-          tipo: context.subproduto || null,
-          campanha: context.campanha || null,
-          textoPrincipal: context.textoPrincipal || null
-        }
-      : null,
+Texto principal:
+${textoPrincipal || 'Gerar texto conforme briefing institucional da marca.'}
+`;
 
-    textos: {
-      principal: context.textoPrincipal || null,
-      complementar: context.textoComplementar || null,
-      legal: context.textoLegal || null
-    },
+  if (tabela) {
+    prompt += `
+Tabela central com colunas:
+${tabela.colunas.join(' | ')}
 
-    tabela: context.modelo === 'B'
-      ? {
-          colunas: context.tabela?.colunas || [],
-          linhas: context.tabela?.linhas || []
-        }
-      : null,
+Valores:
+${tabela.linhas.join('\n')}
+`;
+  }
 
-    status: {
-      aprovado: false,
-      criadoEm: new Date().toISOString()
-    }
-  };
+  return { prompt };
 }
