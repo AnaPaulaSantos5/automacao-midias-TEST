@@ -1,4 +1,4 @@
-import { produtos } from "@/data/produtos";
+import { produtos } from "../data/produtos";
 import { normalizarTexto } from "./normalizacao";
 
 export function resolverProduto(texto) {
