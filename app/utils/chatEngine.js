@@ -1,116 +1,216 @@
 import { resolverProduto } from './resolverProduto';
 import {
-  normalizarCanal,
   normalizarFormato,
+  normalizarCanal,
   normalizarSubtipoConsorcio
 } from './normalizador';
-import { buildFlyerPayload } from './buildFlyerPayload';
 
-export function chatEngine(message, context) {
-  const texto = message.trim();
+export function chatEngine(mensagem, context) {
+  const texto = mensagem.trim();
+  const resposta = (msg) => ({
+    resposta: msg,
+    context
+  });
+
+  // Estado inicial
+  if (!context.etapa) {
+    context.etapa = 'INICIO';
+  }
 
   switch (context.etapa) {
+    // =============================
+    // INÍCIO
+    // =============================
+    case 'INICIO': {
+      context.etapa = 'IDENTIFICAR_PRODUTO';
+      return resposta(
+        'Qual produto você deseja divulgar? (ex: Seguro Residencial, Consórcio Imóvel, Seguro Odonto)'
+      );
+    }
 
-    case undefined:
-      context.etapa = 'PRODUTO';
-      return resposta('Olá! Sou o Flyer AI. Me diga qual produto você deseja divulgar.');
-
-    case 'PRODUTO': {
+    // =============================
+    // IDENTIFICA PRODUTO
+    // =============================
+    case 'IDENTIFICAR_PRODUTO': {
       const produto = resolverProduto(texto);
-      if (!produto) return resposta('Não entendi o produto. Pode repetir?');
 
-      context.produto = produto;
-      context.etapa = 'CANAL';
-      return resposta('Esse flyer será para qual canal? Instagram ou WhatsApp');
-    }
-
-    case 'CANAL': {
-      const canal = normalizarCanal(texto);
-      if (!canal) return resposta('Canal inválido.');
-
-      context.canal = canal;
-      context.etapa = 'FORMATO';
-      return resposta('Qual formato? (1:1 | 4:5 | 9:16)');
-    }
-
-    case 'FORMATO': {
-      const formato = normalizarFormato(texto);
-      if (!formato) return resposta('Formato inválido.');
-
-      context.formato = formato;
-
-      if (context.produto.key === 'consorcio') {
-        context.etapa = 'CONSORCIO_TIPO';
-        return resposta('Qual tipo de consórcio? Imóvel, Automóvel ou Pesados');
+      if (!produto) {
+        return resposta(
+          'Não consegui identificar o produto. Pode tentar novamente?'
+        );
       }
 
-      context.etapa = 'TEXTO_PRINCIPAL_ESCOLHA';
-      return resposta('Deseja escrever a frase principal ou prefere que eu gere? (A/B)');
+      context.area = produto.area;
+      context.produto = produto.produto;
+      context.subproduto = produto.subproduto || null;
+
+      // Consórcio exige subtipo
+      if (produto.produto === 'consorcio' && !context.subproduto) {
+        context.etapa = 'CONSORCIO_TIPO';
+        return resposta(
+          'Qual tipo de consórcio? (Imóvel, Automóvel ou Pesados)'
+        );
+      }
+
+      context.etapa = 'ESCOLHER_FORMATO';
+      return resposta(
+        'Qual formato do flyer? (1:1, 4:5 ou 9:16)'
+      );
     }
 
+    // =============================
+    // SUBTIPO CONSÓRCIO
+    // =============================
     case 'CONSORCIO_TIPO': {
       const subtipo = normalizarSubtipoConsorcio(texto);
-      if (!subtipo) return resposta('Tipo inválido.');
 
-      context.subtipo = subtipo;
+      if (!subtipo) {
+        return resposta(
+          'Tipo inválido. Escolha entre Imóvel, Automóvel ou Pesados.'
+        );
+      }
+
+      context.subproduto = subtipo;
+      context.etapa = 'ESCOLHER_FORMATO';
+
+      return resposta(
+        'Qual formato do flyer? (1:1, 4:5 ou 9:16)'
+      );
+    }
+
+    // =============================
+    // FORMATO
+    // =============================
+    case 'ESCOLHER_FORMATO': {
+      const formato = normalizarFormato(texto);
+
+      if (!formato) {
+        return resposta(
+          'Formato inválido. Use 1:1, 4:5 ou 9:16.'
+        );
+      }
+
+      context.formato = formato;
+      context.etapa = 'ESCOLHER_CANAL';
+
+      return resposta(
+        'Onde será postado? (Instagram ou WhatsApp)'
+      );
+    }
+
+    // =============================
+    // CANAL
+    // =============================
+    case 'ESCOLHER_CANAL': {
+      const canal = normalizarCanal(texto);
+
+      if (!canal) {
+        return resposta(
+          'Canal inválido. Escolha Instagram ou WhatsApp.'
+        );
+      }
+
+      context.canal = canal;
+
+      // Consórcio NÃO tem campanha
+      if (context.produto === 'consorcio') {
+        context.etapa = 'TEXTO_PRINCIPAL_ESCOLHA';
+        return resposta(
+          'Deseja escrever o texto principal da campanha ou prefere que eu gere? (A/B)'
+        );
+      }
+
+      // Seguros e Benefícios podem ter campanha
+      context.etapa = 'CAMPANHA_OPCIONAL';
+      return resposta(
+        'Deseja informar uma campanha específica? (ex: Janeiro Azul) ou digite NÃO'
+      );
+    }
+
+    // =============================
+    // CAMPANHA
+    // =============================
+    case 'CAMPANHA_OPCIONAL': {
+      if (texto.toLowerCase() !== 'não' && texto.toLowerCase() !== 'nao') {
+        context.campanha = texto;
+      } else {
+        context.campanha = null;
+      }
+
       context.etapa = 'TEXTO_PRINCIPAL_ESCOLHA';
-      return resposta('Deseja escrever o texto da campanha ou prefere que eu gere? (A/B)');
+
+      return resposta(
+        'Deseja escrever o texto principal ou prefere que eu gere automaticamente? (A/B)'
+      );
     }
 
-    case 'TEXTO_PRINCIPAL_ESCOLHA':
+    // =============================
+    // TEXTO PRINCIPAL - ESCOLHA
+    // =============================
+    case 'TEXTO_PRINCIPAL_ESCOLHA': {
       if (texto.toUpperCase() === 'A') {
-        context.etapa = 'TEXTO_PRINCIPAL_INPUT';
-        return resposta('Digite o texto principal:');
+        context.etapa = 'TEXTO_PRINCIPAL_MANUAL';
+        return resposta('Digite o texto principal do flyer.');
       }
-      context.textoPrincipal = null;
-      context.etapa = context.produto.aceitaTabela ? 'MODELO' : 'CONFIRMACAO';
-      return resposta('Ok, vou gerar automaticamente.');
 
-    case 'TEXTO_PRINCIPAL_INPUT':
+      if (texto.toUpperCase() === 'B') {
+        context.textoPrincipal = null;
+        context.etapa = 'CONFIRMACAO_FINAL';
+        return resposta(
+          'Perfeito. Vou gerar o texto automaticamente. Deseja confirmar a criação do flyer? (SIM/NÃO)'
+        );
+      }
+
+      return resposta(
+        'Opção inválida. Digite A para escrever ou B para gerar automaticamente.'
+      );
+    }
+
+    // =============================
+    // TEXTO PRINCIPAL MANUAL
+    // =============================
+    case 'TEXTO_PRINCIPAL_MANUAL': {
       context.textoPrincipal = texto;
-      context.etapa = context.produto.aceitaTabela ? 'MODELO' : 'CONFIRMACAO';
-      return resposta('Perfeito.');
+      context.etapa = 'CONFIRMACAO_FINAL';
 
-    case 'MODELO': {
-      const m = texto.toUpperCase();
-      if (!['A', 'B'].includes(m)) return resposta('Digite A ou B.');
-
-      context.modelo = m;
-
-      if (m === 'B') {
-        context.tabela = { colunas: [], linhas: [] };
-        context.etapa = 'TABELA_COLUNAS';
-        return resposta('Informe o cabeçalho da tabela (separado por vírgula).');
-      }
-
-      context.etapa = 'CONFIRMACAO';
-      return resposta('Modelo simples selecionado.');
+      return resposta(
+        'Texto registrado. Deseja confirmar a criação do flyer? (SIM/NÃO)'
+      );
     }
 
-    case 'TABELA_COLUNAS':
-      context.tabela.colunas = texto.split(',').map(v => v.trim());
-      context.etapa = 'TABELA_LINHAS';
-      return resposta('Informe uma linha da tabela ou digite "continuar".');
+    // =============================
+    // CONFIRMAÇÃO FINAL
+    // =============================
+    case 'CONFIRMACAO_FINAL': {
+      if (texto.toUpperCase() === 'SIM') {
+        context.etapa = 'GERAR_FLYER';
 
-    case 'TABELA_LINHAS':
-      if (texto.toLowerCase() === 'continuar') {
-        context.etapa = 'CONFIRMACAO';
-        return resposta('Tudo certo.');
+        return {
+          resposta: 'Gerando o flyer com base nas informações fornecidas...',
+          context,
+          gerarFlyer: true
+        };
       }
-      context.tabela.linhas.push(texto);
-      return resposta('Linha adicionada.');
 
-    case 'CONFIRMACAO': {
-      const payload = buildFlyerPayload(context);
-      context.etapa = 'FINAL';
-      return resposta(`PROMPT PARA APROVAÇÃO:\n\n${payload.prompt}`);
+      if (texto.toUpperCase() === 'NÃO' || texto.toUpperCase() === 'NAO') {
+        context.etapa = 'INICIO';
+        return resposta(
+          'Tudo bem. Podemos começar novamente quando quiser.'
+        );
+      }
+
+      return resposta(
+        'Resposta inválida. Digite SIM ou NÃO.'
+      );
     }
 
+    // =============================
+    // FALLBACK
+    // =============================
     default:
-      return resposta('Fluxo encerrado.');
+      context.etapa = 'INICIO';
+      return resposta(
+        'Algo saiu do fluxo. Vamos começar novamente.'
+      );
   }
-}
-
-function resposta(texto) {
-  return { texto };
 }
