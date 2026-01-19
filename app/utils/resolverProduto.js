@@ -1,31 +1,35 @@
 import { produtos } from '../data/produtos';
 
 const aliases = {
-  seguro_residencial: ['seguro residencial', 'residencial', 'casa', 'lar', 'home'],
-  seguro_auto: ['seguro auto', 'auto', 'carro', 'veículo', 'automóvel'],
-  seguro_odonto: ['seguro odonto', 'odonto', 'dentista', 'sorriso'],
-  plano_saude: ['plano de saúde', 'saúde', 'health'],
-  seguro_pet: ['seguro pet', 'pet', 'animal', 'cachorro', 'gato'],
-  consorcio: ['consórcio', 'consorcio', 'finanças', 'parcelas', 'grupo']
+  consorcio: [
+    'consorcio',
+    'consórcio',
+    'financas',
+    'finanças',
+    'parcelas',
+    'grupo'
+  ],
+  seguro_residencial: ['seguro residencial', 'residencial', 'casa', 'lar'],
+  seguro_auto: ['seguro auto', 'auto', 'carro', 'veiculo'],
+  plano_saude: ['plano de saude', 'saude'],
+  seguro_odonto: ['odonto', 'dentista'],
+  seguro_pet: ['pet', 'animal']
 };
 
+function normalizar(texto = '') {
+  return texto
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+}
+
 export function resolverProduto(texto) {
-  const t = (texto || '').toLowerCase();
+  const t = normalizar(texto);
 
-  // 1️⃣ CATEGORIAS (NÃO SÃO PRODUTOS)
-  if (t === 'seguro' || t.includes(' seguro')) {
-    return { categoria: 'seguro' };
-  }
-
-  if (t === 'benefícios' || t === 'beneficios' || t.includes('benef')) {
-    return { categoria: 'beneficios' };
-  }
-
-  // 2️⃣ PRODUTOS DIRETOS (aliases)
   for (const key in aliases) {
     for (const termo of aliases[key]) {
-      if (t.includes(termo)) {
-        return produtos[key];
+      if (t.includes(normalizar(termo))) {
+        return produtos[key] || null;
       }
     }
   }
