@@ -1,6 +1,6 @@
-import { chatEngine } from '@/app/utils/chatEngine';
-import { gerarPrompt } from '@/app/utils/gerarPrompt';
-import { initialState } from '@/app/utils/initialState';
+import { chatEngine } from '../../utils/chatEngine';
+import { gerarPrompt } from '../../utils/gerarPrompt';
+import { initialState } from '../../utils/initialState';
 
 let state = { ...initialState };
 
