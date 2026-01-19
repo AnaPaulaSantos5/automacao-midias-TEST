@@ -1,28 +1,45 @@
 export const initialState = {
   etapa: 'START',
 
-  // Produto principal
-  produto: null,
-  area: null,
+  // Produto e área
+  produto: null, // ex: { key: 'consorcio', area: 'confi-financas' }
+  subtipo: null, // imovel | automovel | pesados | residencial | odonto | saude | pet
 
-  // Consórcio
-  subproduto: null,
+  /* =========================
+     CONFI FINANÇAS — CONSÓRCIO
+  ========================= */
   meses: null,
-  campanha: null,
-  tabela: {
-    colunas: [],
-    linhas: []
+
+  campanha: {
+    textoPrincipal: null, // ex: "Parcelas 40%"
+    textoAuxiliar: null   // ex: "menores até a contemplação"
   },
 
-  // Textos
-  textoPrincipal: null,
-  textoComplementar: null,
+  tabela: {
+    colunas: [], // SEMPRE fixas no prompt, aqui só confirmação
+    linhas: []   // valores escolhidos pelo usuário
+  },
 
-  // Controle
-  formato: null,
-  canal: null,
+  /* =========================
+     TEXTOS (SEGUROS / BENEFÍCIOS)
+  ========================= */
+  frases: {
+    modo: null, // 'auto' | 'manual'
 
-  // Flags
-  aceitaTabela: false,
-  aceitaCampanha: false
+    // Seguro
+    institucional: null,
+    destaque: null,
+    complementar: null,
+
+    // Benefícios (odonto / saúde / pet)
+    bloco1: null,
+    bloco2: null
+  },
+
+  /* =========================
+     CONTROLE
+  ========================= */
+  incluirRodape: true,
+  formato: null, // feed | story | etc
+  canal: null,   // instagram | whatsapp | etc
 };
