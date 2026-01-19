@@ -1,183 +1,188 @@
 import { resolverProduto } from './resolverProduto';
-import {
-  normalizarFormato,
-  normalizarSubtipoConsorcio
-} from './normalizador';
 
-export function chatEngine(message, context = {}) {
-  const texto = (message || '').trim();
+export function chatEngine(input, context) {
+  try {
+    const texto = input.toLowerCase();
 
-  // ===== INICIALIZAÇÃO =====
-  if (!context.etapa) {
-    context.etapa = 'ESCOLHA_PRODUTO';
-    return resposta(
-      'Olá! Sou o Flyer AI da Confi.\nQual flyer deseja criar: Consórcio, Seguro ou Benefícios?',
-      context
-    );
-  }
+    // =========================
+    // INICIALIZAÇÃO
+    // =========================
+    if (!context.step) {
+      context.step = 'inicio';
+    }
 
-  // ===== FLUXO =====
-  switch (context.etapa) {
-    /* =========================
-       ESCOLHA DO PRODUTO
-    ========================= */
-    case 'ESCOLHA_PRODUTO': {
+    // =========================
+    // INÍCIO
+    // =========================
+    if (context.step === 'inicio') {
+      context.step = 'categoria';
+      return bot('Olá! Qual flyer deseja gerar? Seguro, Finanças ou Benefícios?');
+    }
+
+    // =========================
+    // CATEGORIA
+    // =========================
+    if (context.step === 'categoria') {
+      const resultado = resolverProduto(texto);
+
+      if (!resultado || !resultado.categoria) {
+        return bot('Por favor, escolha uma opção válida: Seguro, Finanças ou Benefícios.');
+      }
+
+      context.categoria = resultado.categoria;
+
+      if (resultado.categoria === 'seguro') {
+        context.step = 'tipo_seguro';
+        return bot('Qual tipo de seguro? Residencial ou Auto?');
+      }
+
+      if (resultado.categoria === 'beneficios') {
+        context.step = 'tipo_beneficio';
+        return bot('Seguro Odonto, Saúde ou Pet?');
+      }
+
+      if (resultado.categoria === 'financas') {
+        context.produto = 'consorcio';
+        context.step = 'frase';
+        return bot('Deseja que eu gere a frase da campanha ou prefere escrever?');
+      }
+    }
+
+    // =========================
+    // TIPO DE SEGURO
+    // =========================
+    if (context.step === 'tipo_seguro') {
       const produto = resolverProduto(texto);
 
       if (!produto) {
-        return resposta(
-          'Não entendi. Você pode escolher entre: Consórcio, Seguro ou Benefícios.',
-          context
-        );
+        return bot('Informe corretamente: Seguro Residencial ou Seguro Auto.');
       }
 
       context.produto = produto;
-      context.etapa =
-        produto.key === 'consorcio'
-          ? 'CONSORCIO_SUBTIPO'
-          : produto.area === 'confi-seguros'
-          ? 'SEGURO_TIPO'
-          : 'BENEFICIOS_TIPO';
-
-      return resposta(
-        produto.key === 'consorcio'
-          ? 'Qual tipo de consórcio? Imóvel, Automóvel ou Pesados?'
-          : produto.area === 'confi-seguros'
-          ? 'Qual seguro deseja criar? Residencial ou Auto?'
-          : 'Qual produto deseja criar? Saúde, Odonto ou Pet?',
-        context
-      );
+      context.step = 'frase';
+      return bot('Deseja que eu gere a frase ou prefere escrever?');
     }
 
-    /* =========================
-       CONSÓRCIO
-    ========================= */
-    case 'CONSORCIO_SUBTIPO': {
-      const subtipo = normalizarSubtipoConsorcio(texto);
-      if (!subtipo) {
-        return resposta(
-          'Tipo inválido. Use: Imóvel, Automóvel ou Pesados.',
-          context
-        );
+    // =========================
+    // TIPO DE BENEFÍCIO
+    // =========================
+    if (context.step === 'tipo_beneficio') {
+      const produto = resolverProduto(texto);
+
+      if (!produto) {
+        return bot('Informe corretamente: Odonto, Saúde ou Pet.');
       }
 
-      context.subtipo = subtipo;
-      context.etapa = 'CONSORCIO_MESES';
+      context.produto = produto;
 
-      return resposta(
-        'Quantos meses terá o grupo? (Ex: 200)',
-        context
-      );
-    }
-
-    case 'CONSORCIO_MESES': {
-      const meses = texto.replace(/\D/g, '');
-      if (!meses) {
-        return resposta('Informe apenas o número de meses.', context);
+      // Odonto tem fluxo especial
+      if (produto.id === 'seguro_odonto') {
+        context.step = 'formato';
+        return bot('Esse flyer é para qual formato? (9:16, 1:1, etc)');
       }
 
-      context.meses = meses;
-      context.etapa = 'CONSORCIO_CAMPANHA';
+      // Saúde e Pet → só frase
+      context.step = 'frase';
+      return bot('Deseja que eu gere as frases automaticamente ou prefere escrever?');
+    }
 
-      return resposta(
-        'Qual campanha deseja destacar? Ex: Parcelas reduzidas, taxa zero…',
-        context
+    // =========================
+    // FORMATO (ODONTO)
+    // =========================
+    if (context.step === 'formato') {
+      context.formato = texto;
+      context.step = 'itens_odonto';
+
+      return bot(
+        `Ok. Os itens padrão são:
+1. Consultas
+2. Tratamento de Canal
+3. Extração do siso
+4. Emergências
+5. Restauração
+6. Limpeza
+
+Deseja usar o padrão ou informar outros itens?`
       );
     }
 
-    case 'CONSORCIO_CAMPANHA': {
-      context.textoPrincipal = texto;
-      context.etapa = 'CONSORCIO_TABELA_COLUNAS';
-
-      return resposta(
-        'Informe os títulos das colunas da tabela ou digite "padrão".',
-        context
-      );
-    }
-
-    case 'CONSORCIO_TABELA_COLUNAS': {
-      context.tabela = {
-        colunas:
-          texto.toLowerCase() === 'padrão'
-            ? ['Crédito', 'Taxa Adm', 'Parcela PF', 'Parcela PJ']
-            : texto.split(',').map(v => v.trim()),
-        linhas: []
-      };
-
-      context.etapa = 'CONSORCIO_TABELA_LINHAS';
-
-      return resposta(
-        'Envie as linhas da tabela uma por mensagem ou digite "continuar".',
-        context
-      );
-    }
-
-    case 'CONSORCIO_TABELA_LINHAS': {
-      if (texto.toLowerCase() === 'continuar') {
-        context.etapa = 'TEXTO_COMPLEMENTAR';
-        return resposta(
-          'Deseja adicionar um texto complementar? (opcional)',
-          context
-        );
+    // =========================
+    // ITENS ODONTO
+    // =========================
+    if (context.step === 'itens_odonto') {
+      if (texto.includes('padr')) {
+        context.itens = 'padrao';
+        context.step = 'frases_odonto';
+        return bot('Posso gerar as frases automaticamente ou prefere escrever?');
       }
 
-      context.tabela.linhas.push(texto);
-      return resposta('Linha adicionada.', context);
+      context.itens = 'custom';
+      context.step = 'itens_custom';
+      return bot('Ok, escreva os itens em tópicos.');
     }
 
-    /* =========================
-       TEXTO COMPLEMENTAR
-    ========================= */
-    case 'TEXTO_COMPLEMENTAR': {
-      context.textoComplementar =
-        texto.toLowerCase() === 'não' ? null : texto;
-
-      context.etapa = 'CONFIRMACAO';
-
-      return resposta(resumo(context), context);
+    if (context.step === 'itens_custom') {
+      context.itens_lista = input.split('\n');
+      context.step = 'frases_odonto';
+      return bot('Deseja que eu gere as frases automaticamente ou prefere escrever?');
     }
 
-    /* =========================
-       CONFIRMAÇÃO
-    ========================= */
-    case 'CONFIRMACAO': {
-      if (texto.toLowerCase().includes('sim')) {
-        return {
-          role: 'assistant',
-          content: 'Prompt pronto para API.',
-          gerarPrompt: true,
-          payload: context
-        };
+    // =========================
+    // FRASES
+    // =========================
+    if (context.step === 'frases_odonto' || context.step === 'frase') {
+      if (texto.includes('gerar')) {
+        context.frases.modo = 'ia';
+        context.step = 'rodape';
+        return bot('Deseja incluir as informações de rodapé ou deixar sem?');
       }
 
-      context.etapa = 'ESCOLHA_PRODUTO';
-      return resposta('Ok, vamos ajustar. Qual flyer deseja criar?', context);
+      context.frases.modo = 'manual';
+      context.step = 'frase1';
+      return bot('Escreva a primeira frase (destaque principal).');
     }
 
-    default:
-      context.etapa = 'ESCOLHA_PRODUTO';
-      return resposta(
-        'Ocorreu um erro. Vamos recomeçar.',
-        context
-      );
+    if (context.step === 'frase1') {
+      context.frases.bloco1 = input;
+      context.step = 'frase2';
+      return bot('Agora escreva a segunda frase.');
+    }
+
+    if (context.step === 'frase2') {
+      context.frases.bloco2 = input;
+      context.step = 'rodape';
+      return bot('Deseja incluir as informações de rodapé ou deixar sem?');
+    }
+
+    // =========================
+    // RODAPÉ
+    // =========================
+    if (context.step === 'rodape') {
+      context.rodape = texto.includes('sim') || texto.includes('desejo');
+      context.step = 'final';
+      return gerarPromptFinal(context);
+    }
+
+    return bot('Não entendi. Pode reformular?');
+  } catch (e) {
+    console.error(e);
+    context.step = 'inicio';
+    return bot('Ocorreu um erro. Vamos recomeçar.');
   }
 }
 
-/* =========================
-   HELPERS
-========================= */
-function resposta(content, context) {
-  return { role: 'assistant', content, context };
+// =========================
+// HELPERS
+// =========================
+function bot(text) {
+  return { role: 'assistant', content: text };
 }
 
-function resumo(c) {
-  return `
-Produto: ${c.produto.nomeExibicao}
-Tipo: ${c.subtipo || '-'}
-Meses: ${c.meses || '-'}
-Texto principal: ${c.textoPrincipal}
-Texto complementar: ${c.textoComplementar || 'Não informado'}
+function gerarPromptFinal(context) {
+  context.pronto = true;
 
-Posso gerar o prompt do flyer? (Sim / Ajustar)
-`.trim();
+  return {
+    role: 'assistant',
+    content: `Segue o prompt do flyer baseado no modelo da Confi (${context.produto.nome}). Pronto para gerar a arte.`
+  };
 }
