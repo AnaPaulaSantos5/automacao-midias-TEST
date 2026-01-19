@@ -159,13 +159,15 @@ export function chatEngine(input, context) {
       context.step = 'final';
 
       return bot(
-        `Perfeito! Confira os dados:\n` +
-        `Produto: Consórcio\n` +
-        `Tipo: ${context.subtipo}\n` +
-        `Meses: ${context.meses}\n` +
-        `Texto principal: ${context.campanha}\n` +
-        `Prompt pronto para gerar? (Sim / Ajustar)`
-      );
+  `Perfeito! Confira os dados:\n` +
+  `Produto: Consórcio\n` +
+  `Tipo: ${context.subtipo}\n` +
+  `Meses: ${context.meses}\n` +
+  `Campanha: ${context.campanha}\n` +
+  `Colunas: ${context.colunas.join(' | ')}\n` +
+  `Linhas:\n- ${context.linhas.join('\n- ')}\n\n` +
+  `Prompt pronto para gerar? (Sim / Ajustar)`
+);
     }
 
     /* =========================
