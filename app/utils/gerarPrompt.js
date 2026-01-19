@@ -1,240 +1,257 @@
-export function gerarPrompt(context) {
-  if (!context || !context.produto) {
-    throw new Error('Contexto inválido');
+export function gerarPrompt(state) {
+  if (!state || !state.produto) {
+    throw new Error('State inválido');
   }
 
   const {
     produto,
-    subtipo,
-    campanha,
+    area,
+    subproduto,
     meses,
-    colunas,
-    linhas,
-    frases,
-    rodape,
-    beneficios
-  } = context;
+    campanha,
+    tabela,
+    textoPrincipal,
+    textoComplementar
+  } = state;
 
   /* ======================================================
      CONFI FINANÇAS — CONSÓRCIO
   ====================================================== */
-  if (produto.key === 'consorcio') {
-    const imagem =
-      subtipo === 'imovel'
-        ? 'Casa moderna de alto padrão ao entardecer, arquitetura contemporânea, iluminação quente, estética premium'
-        : subtipo === 'automovel'
-        ? 'Carro moderno e simples em estrada com casas ao fundo, cenário urbano leve'
-        : 'Caminhão moderno em estrada cercada por árvores, cenário amplo e profissional';
+  if (produto === 'financas' || area === 'confi-financas') {
+    const imagemBase =
+      subproduto === 'imovel'
+        ? 'Casa moderna ao entardecer, arquitetura contemporânea, iluminação quente, estilo premium'
+        : subproduto === 'automovel'
+        ? 'Carro atual em estrada, cenário com casas ao fundo, estética realista'
+        : 'Caminhão moderno em estrada cercada por árvores, fotografia profissional';
 
     return `
-Flyer de Campanha – Confi Finanças | Consórcio ${subtipo}
+Flyer vertical premium – Confi Finanças | Consórcio ${subproduto}
 
-REGRA ABSOLUTA
-Este layout é FIXO. Não reinterpretar, não reorganizar e não alterar cores ou hierarquia.
-
-IDENTIDADE VISUAL
-• Paleta fixa:
-  - Azul #1260c7
-  - Branco #ffffff
-  - Preto #000000
-• Estilo corporativo, premium e institucional.
+IDENTIDADE VISUAL (FIXA – NÃO ALTERAR)
+Paleta:
+• Azul principal #1260c7
+• Branco #ffffff
+• Preto #000000
+Estética institucional, corporativa e premium.
 
 IMAGEM DE FUNDO
-• ${imagem}
-• Logotipo Confi Finanças no canto superior esquerdo.
+${imagemBase}
+Imagem realista, bem iluminada, sem interferência visual.
+Logotipo da Confi Finanças no canto superior esquerdo.
 
 CABEÇALHO
-• Título grande, branco, alinhado à esquerda:
-"Consórcio ${subtipo === 'imovel' ? 'Imóvel' : subtipo === 'automovel' ? 'Automóvel' : 'Pesados'}"
-• Subtítulo logo abaixo, branco:
-"${meses} meses"
+Título grande, branco, alinhado à esquerda:
+“Consórcio ${subproduto === 'imovel' ? 'Imóvel' : subproduto === 'automovel' ? 'Automóvel' : 'Pesados'}”
+Subtítulo logo abaixo:
+“${meses} meses”
 
-DESTAQUE DE CAMPANHA — LATERAL DIREITA
-• Texto grande (branco):
-"${campanha.textoPrincipal}"
-• Texto auxiliar abaixo (branco):
-"${campanha.textoAuxiliar}"
-• Ambos alinhados à direita.
+DESTAQUE DE CAMPANHA (LATERAL DIREITA)
+Texto principal grande, branco:
+“${campanha.textoPrincipal}”
+Texto auxiliar logo abaixo:
+“${campanha.textoAuxiliar}”
+Alinhamento à direita.
 
-TABELA CENTRAL (ELEMENTO PRINCIPAL)
-• Fundo branco com bordas arredondadas.
+BLOCO CENTRAL – TABELA (ELEMENTO PRINCIPAL)
+Tabela com fundo branco e bordas arredondadas.
 
-CABEÇALHO DA TABELA — CORES FIXAS (NÃO VARIAR)
+Cabeçalho da tabela – CORES FIXAS:
 • Crédito → fundo #2c3da7 | texto branco
 • Taxa Adm → fundo #000000 | texto branco
 • Parcela Pessoa Física → fundo #1260c7 | texto branco
 • Parcela Pessoa Jurídica → fundo #5691df | texto branco
 
-TÍTULOS DAS COLUNAS (FIXOS)
-${colunas.map(c => `• ${c}`).join('\n')}
+Colunas:
+${tabela.colunas.join(' | ')}
 
-LINHAS DA TABELA (VALORES DO USUÁRIO)
-${linhas.map(l => `• ${l}`).join('\n')}
+Linhas (valores definidos pelo usuário):
+${tabela.linhas.map(l => `• ${l}`).join('\n')}
 
-• Fonte preta, clara e legível.
+Fonte preta, clara, legível, sem estilização criativa.
 
 RODAPÉ LEGAL
-• Texto pequeno, cinza-claro, centralizado.
-• Conteúdo fornecido pelo usuário:
-"${rodape}"
+Texto pequeno, cinza-claro, centralizado.
+Conteúdo variável conforme campanha informada pelo usuário.
 
-RESULTADO
-Flyer institucional, focado em conversão, clareza financeira e credibilidade.
-    `.trim();
+RESULTADO FINAL
+Flyer institucional, organizado, altamente legível, com foco em conversão e clareza financeira.
+`.trim();
   }
 
   /* ======================================================
-     CONFI SEGUROS — FLYER GERAL / RESIDENCIAL
+     CONFI SEGUROS — GERAL / RESIDENCIAL
   ====================================================== */
-  if (produto.area === 'confi-seguros') {
+  if (area === 'confi-seguros') {
     return `
-Flyer – Confi Seguros | Seguro ${subtipo}
+Flyer vertical – Confi Seguros | Seguro ${subproduto}
 
-REGRA ABSOLUTA
-Estrutura visual fixa conforme manual Confi Seguros.
-
-IDENTIDADE VISUAL
-• Amarelo #ffce0a
+IDENTIDADE VISUAL (FIXA)
+Paleta:
+• Amarelo institucional #ffce0a
 • Branco #ffffff
 • Preto #000000
+Estética clean, iluminada, minimalista.
 
-IMAGEM DE FUNDO
-• Fotografia emocional seguindo UMA das opções:
-  - Pessoa jovem relaxada em ambiente acolhedor
-  - Grupo de amigos ao ar livre com luz decorativa
-  - Pessoa trabalhando em notebook com café em ambiente minimalista
-• A imagem deve transmitir conforto, proteção e tranquilidade.
+IMAGEM DE FUNDO (ESCOLHER UMA VARIAÇÃO)
+• Pessoa jovem relaxada em ambiente acolhedor
+OU
+• Grupo de amigos ao ar livre com luz decorativa
+OU
+• Pessoa trabalhando em notebook com café, ambiente minimalista e seguro
 
-MENSAGEM PRINCIPAL
-• Frase institucional superior:
-"${frases.institucional}"
-• Fonte branca, centralizada.
-• Palavra relacionada a segurança em destaque por peso de fonte.
+MENSAGEM CENTRAL (VARIÁVEL COM NORTE)
+Frase institucional superior:
+Texto deve transmitir segurança, tranquilidade e confiança.
+Exemplo de estrutura (não copiar literalmente):
+“Seu patrimônio seguro, sua …”
 
-DESTAQUE CENTRAL
-• Texto grande:
-"${frases.destaque}"
-• Fonte branca muito grande.
-• Envolvido por moldura arredondada com contorno amarelo #ffce0a.
+Alinhamento central, tipografia branca moderna.
+Palavra “seguro” em destaque por peso da fonte.
+
+DESTAQUE EMOCIONAL (FIXO)
+Texto grande central:
+“Tranquilidade”
+Fonte branca muito grande.
+Dentro de moldura arredondada com contorno amarelo #ffce0a.
 
 TEXTO COMPLEMENTAR
-• Abaixo do destaque:
-"${frases.complementar}"
-• Fonte branca média, centralizada.
+Abaixo do destaque:
+“garantida”
+Fonte branca média, centralizada.
 
-RODAPÉ
-• Vinheta escura para legibilidade.
-• Itens alinhados horizontalmente:
-  - WhatsApp (41) 99973-3350 – 24h
-  - Telefone (41) 3019-7500
-  - Instagram confi_seguros
-• Ícones amarelos.
+RODAPÉ (SE ATIVADO NO STATE)
+Vinheta escura para legibilidade.
+• WhatsApp (41) 99973-3350 – 24h
+• Telefone (41) 3019-7500
+• Instagram @confi_seguros
+Ícones amarelos, alinhados horizontalmente.
 
 CTA
-• Canto inferior direito.
-• Botão arredondado cinza-claro.
-• Texto branco:
-"Entre em contato!"
+Botão arredondado no canto inferior direito.
+Fundo cinza claro.
+Texto branco:
+“Entre em contato!”
 
 RESULTADO
-Flyer institucional focado em segurança, tranquilidade e confiança.
-    `.trim();
+Flyer emocional, institucional e altamente coerente com a identidade Confi Seguros.
+`.trim();
   }
 
   /* ======================================================
      CONFI BENEFÍCIOS — ODONTO
   ====================================================== */
-  if (produto.area === 'confi-beneficios' && subtipo === 'odonto') {
+  if (area === 'confi-beneficios' && subproduto === 'odonto') {
     return `
-Flyer – Confi Benefícios | Seguro Odonto
+Flyer vertical – Confi Benefícios | Seguro Odonto
 
 ESTÉTICA FIXA
-• Visual leve, amigável e moderno.
-• Fundo em degradê coral #f5886c.
+Visual leve, amigável e moderno.
+Paleta coral #f5886c como base.
 
-TEXTO PRINCIPAL
-• Bloco alinhado à esquerda, fonte branca.
-• Frases devem remeter a autoestima, cuidado e bem-estar.
-• Palavras-chave podem ser destacadas apenas por peso de fonte.
+FUNDO
+Degradê coral homogêneo.
+Bordas superiores arredondadas.
 
-LISTA DE BENEFÍCIOS (VARIÁVEL PELO USUÁRIO)
-${beneficios.map(b => `• ${b}`).join('\n')}
+TEXTO PRINCIPAL (VARIÁVEL COM NORTE)
+Bloco à esquerda, fonte branca.
+Frase 1: emocional, autoestima e bem-estar (exemplo de tom).
+Frase 2: benefício, praticidade e segurança.
+Palavras-chave podem estar em negrito por peso de fonte.
+
+LISTA DE BENEFÍCIOS
+Cards arredondados em bege rosado claro.
+Ícone de check preto.
+Itens definidos pelo usuário.
 
 IMAGEM
-• Pessoa sorrindo amplamente à direita.
-• Roupa branca, expressão confiante.
+Pessoa sorrindo amplamente no lado direito.
+Roupa branca, expressão leve e confiante.
 
 ELEMENTO GRÁFICO
-• Curva coral orgânica no canto inferior direito.
+Curva coral orgânica no canto inferior direito.
 
 RESULTADO
-Flyer emocional, focado em autoestima, cuidado e bem-estar.
-    `.trim();
+Flyer emocional, humano e coerente com Confi Benefícios.
+`.trim();
   }
 
   /* ======================================================
      CONFI BENEFÍCIOS — SAÚDE
   ====================================================== */
-  if (produto.area === 'confi-beneficios' && subtipo === 'saude') {
+  if (area === 'confi-beneficios' && subproduto === 'saude') {
     return `
-Flyer – Confi Benefícios | Seguro Saúde
+Flyer vertical – Confi Benefícios | Seguro Saúde
 
-ESTÉTICA
-• Fundo branco com faixa lateral direita em blocos arredondados coral.
+ESTÉTICA FIXA
+Clean, arejada, minimalista.
+Predominância de branco e coral.
+
+FUNDO
+Branco com faixa lateral direita de blocos verticais arredondados em tons de coral e pêssego.
 
 CABEÇALHO
-• Linha horizontal fina coral + texto:
-"Seguro Saúde"
-• Palavra “Saúde” em negrito.
+Linha horizontal fina coral + texto:
+“Seguro Saúde”
+Palavra “Saúde” em negrito por peso da fonte.
 
-TEXTO PRINCIPAL
-• Texto alinhado à esquerda, coral.
-• Linguagem de cuidado, acesso e segurança.
-• Palavras-chave destacadas apenas por peso de fonte.
+TEXTO PRINCIPAL (VARIÁVEL COM NORTE)
+Texto alinhado à esquerda em coral.
+Deve transmitir cuidado, acesso, segurança e proximidade.
+Palavras-chave podem ser enfatizadas.
 
 IMAGEM
-• Duas mulheres (jovem e idosa) em atividade de alongamento.
-• Roupa branca.
-• Curva coral envolvendo parcialmente.
+Duas mulheres (jovem e idosa) em situação de cuidado/alongamento.
+Foto recortada sobre a faixa coral.
+Curva coral envolvendo parcialmente as pessoas.
+
+RODAPÉ
+Logotipo Confi Benefícios no canto inferior esquerdo.
 
 RESULTADO
-Flyer humano, acolhedor e profissional.
-    `.trim();
+Flyer humano, profissional e acolhedor.
+`.trim();
   }
 
   /* ======================================================
      CONFI BENEFÍCIOS — PET
   ====================================================== */
-  if (produto.area === 'confi-beneficios' && subtipo === 'pet') {
+  if (area === 'confi-beneficios' && subproduto === 'pet') {
     return `
-Flyer – Confi Benefícios | Seguro Pet
+Flyer vertical – Confi Benefícios | Seguro Pet
 
-ESTÉTICA
-• Fundo branco.
-• Elementos decorativos em coral.
+ESTÉTICA FIXA
+Leve, alegre e amigável.
+Grande presença de coral.
+
+FUNDO
+Branco minimalista com elementos decorativos em coral.
 
 CABEÇALHO
-• Texto central:
-"Seguro Pet"
-• “Seguro” coral claro | “Pet” coral forte em negrito.
-• Linhas finas coral laterais.
+Texto central:
+“Seguro Pet”
+“Seguro” em coral claro.
+“Pet” em coral forte e negrito.
+Linhas horizontais finas em coral nas laterais.
 
-TEXTO PRINCIPAL
-• Bloco esquerdo, coral.
-• Linguagem acolhedora e de proteção ao pet.
+TEXTO PRINCIPAL (VARIÁVEL COM NORTE)
+Bloco esquerdo em coral.
+Frase 1: cuidado e facilidade.
+Frase 2: proteção e suporte nos momentos importantes.
+Palavras-chave podem estar em negrito.
 
 IMAGEM
-• Cachorro labrador recortado com pata levantada.
-• Fundo gráfico de pata coral.
-• Traço curvo coral estilo arco de proteção.
+Cachorro labrador sorridente com pata levantada.
+Fundo gráfico de pata coral.
+Traço curvo coral em estilo arco de proteção.
 
 RODAPÉ
-• Logotipo Confi Benefícios no canto inferior esquerdo.
+Logotipo Confi Benefícios no canto inferior esquerdo.
 
 RESULTADO
-Flyer leve, emocional e focado em cuidado com o pet.
-    `.trim();
+Flyer emocional, simpático e coerente com a identidade da marca.
+`.trim();
   }
 
-  throw new Error('Produto não suportado');
+  throw new Error('Combinação de produto não suportada');
 }
