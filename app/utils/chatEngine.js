@@ -4,13 +4,13 @@ import { resolverProduto } from './resolverProduto';
  * Estrutura do context (state):
  * {
  *   step: string,
- *   categoria: 'seguro' | 'financas' | 'beneficios' | null,
- *   produto: object | null,
- *   subtipo: string | null,
- *   meses: number | null,
- *   campanha: string | null,
+ *   produto: object,
+ *   subtipo: string,
+ *   meses: number,
+ *   campanha: string,
  *   colunas: array,
  *   linhas: array,
+ *   textoComplementar: string | null,
  *   frases: {
  *     modo: 'ia' | 'manual' | null,
  *     bloco1: string | null,
@@ -24,67 +24,82 @@ function bot(content) {
   return { role: 'assistant', content };
 }
 
+function normalizar(texto = '') {
+  return texto
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+}
+
 export function chatEngine(input, context) {
   try {
-    const texto = (input || '').toLowerCase();
+    const texto = normalizar(input);
+
+    /* =========================
+       RESET MANUAL
+    ========================= */
+    if (texto.includes('novo flyer')) {
+      Object.keys(context).forEach(k => delete context[k]);
+      context.step = 'inicio';
+    }
 
     /* =========================
        INICIALIZAÇÃO
     ========================= */
     context.step ??= 'inicio';
-    context.categoria ??= null;
-    context.produto ??= null;
-    context.subtipo ??= null;
-    context.meses ??= null;
-    context.campanha ??= null;
-    context.colunas ??= [];
     context.linhas ??= [];
-    context.frases ??= { modo: null, bloco1: null, bloco2: null };
-    context.rodape ??= null;
+    context.colunas ??= [];
+    context.frases ??= {
+      modo: null,
+      bloco1: null,
+      bloco2: null
+    };
 
     /* =========================
        INÍCIO
     ========================= */
     if (context.step === 'inicio') {
-      context.step = 'categoria';
+      context.step = 'produto';
       return bot('Olá! Qual flyer deseja gerar? Seguro, Finanças ou Benefícios?');
     }
 
     /* =========================
-       CATEGORIA
+       PRODUTO
     ========================= */
-    if (context.step === 'categoria') {
-      if (texto.includes('segur')) {
-        context.categoria = 'seguro';
-        context.step = 'seguro_subtipo';
-        return bot('Qual tipo de seguro? Residencial ou Auto?');
+    if (context.step === 'produto') {
+      const produto = resolverProduto(texto);
+
+      if (!produto) {
+        return bot('Não entendi. Escolha entre: Seguro, Finanças ou Benefícios.');
       }
 
-      if (texto.includes('benef')) {
-        context.categoria = 'beneficios';
-        context.step = 'beneficios_subtipo';
-        return bot('Qual produto deseja criar? Saúde, Odonto ou Pet?');
-      }
+      context.produto = produto;
 
-      if (texto.includes('finan') || texto.includes('consor')) {
-        context.categoria = 'financas';
-        context.produto = resolverProduto('consorcio');
+      if (produto.key === 'consorcio') {
         context.step = 'consorcio_subtipo';
         return bot('Qual tipo de consórcio? Imóvel, Automóvel ou Pesados?');
       }
 
-      return bot('Escolha uma opção válida: Seguro, Finanças ou Benefícios.');
+      if (produto.area === 'confi-seguros') {
+        context.step = 'seguro_subtipo';
+        return bot('Qual tipo de seguro? Residencial ou Auto?');
+      }
+
+      if (produto.area === 'confi-beneficios') {
+        context.step = 'beneficios_subtipo';
+        return bot('Qual produto deseja criar? Saúde, Odonto ou Pet?');
+      }
     }
 
     /* =========================
        CONSÓRCIO
     ========================= */
     if (context.step === 'consorcio_subtipo') {
-      if (!texto.includes('im') && !texto.includes('auto') && !texto.includes('pes')) {
+      if (!texto.includes('imov') && !texto.includes('auto') && !texto.includes('pes')) {
         return bot('Escolha entre: Imóvel, Automóvel ou Pesados.');
       }
 
-      context.subtipo = texto.includes('im')
+      context.subtipo = texto.includes('imov')
         ? 'imovel'
         : texto.includes('auto')
         ? 'automovel'
@@ -110,9 +125,16 @@ export function chatEngine(input, context) {
     }
 
     if (context.step === 'consorcio_colunas') {
-      context.colunas = texto.includes('padr')
-        ? ['Crédito', 'Taxa Adm', 'Parcela Pessoa Física', 'Parcela Pessoa Jurídica']
-        : input.split(',').map(c => c.trim());
+      if (texto.includes('padra')) {
+        context.colunas = [
+          'Crédito',
+          'Taxa Adm',
+          'Parcela Pessoa Física',
+          'Parcela Pessoa Jurídica'
+        ];
+      } else {
+        context.colunas = input.split(',').map(c => c.trim());
+      }
 
       context.step = 'consorcio_linhas';
       return bot('Envie as linhas da tabela ou digite "continuar".');
@@ -124,12 +146,16 @@ export function chatEngine(input, context) {
         return bot('Deseja adicionar um texto complementar? (digite "Não" se não)');
       }
 
+      if (texto.includes('padra')) {
+        return bot('As colunas já estão definidas. Digite "continuar" para seguir.');
+      }
+
       context.linhas.push(input);
-      return bot('Linha adicionada. Envie outra ou "continuar".');
+      return bot('Linha adicionada. Envie outra ou digite "continuar".');
     }
 
     if (context.step === 'consorcio_texto_complementar') {
-      context.textoComplementar = texto.includes('não') ? null : input;
+      context.textoComplementar = texto === 'nao' ? null : input;
       context.step = 'final';
 
       return bot(
@@ -137,7 +163,7 @@ export function chatEngine(input, context) {
         `Produto: Consórcio\n` +
         `Tipo: ${context.subtipo}\n` +
         `Meses: ${context.meses}\n` +
-        `Texto principal: ${context.campanha}\n\n` +
+        `Texto principal: ${context.campanha}\n` +
         `Prompt pronto para gerar? (Sim / Ajustar)`
       );
     }
@@ -151,7 +177,6 @@ export function chatEngine(input, context) {
       }
 
       context.subtipo = texto.includes('res') ? 'residencial' : 'auto';
-      context.produto = resolverProduto(`seguro ${context.subtipo}`);
       context.step = 'seguro_frases';
       return bot('Deseja que eu gere a frase ou prefere escrever?');
     }
@@ -184,7 +209,7 @@ export function chatEngine(input, context) {
        BENEFÍCIOS
     ========================= */
     if (context.step === 'beneficios_subtipo') {
-      if (!texto.includes('odonto') && !texto.includes('pet') && !texto.includes('saú')) {
+      if (!texto.includes('odonto') && !texto.includes('pet') && !texto.includes('saude')) {
         return bot('Escolha entre: Saúde, Odonto ou Pet.');
       }
 
@@ -194,7 +219,6 @@ export function chatEngine(input, context) {
         ? 'pet'
         : 'saude';
 
-      context.produto = resolverProduto(context.subtipo);
       context.step = 'beneficios_frases';
       return bot('Deseja que eu gere as frases automaticamente ou prefere escrever?');
     }
@@ -227,20 +251,13 @@ export function chatEngine(input, context) {
        FINAL
     ========================= */
     if (context.step === 'final') {
-      if (texto.includes('novo')) {
-        Object.keys(context).forEach(k => delete context[k]);
-        context.step = 'inicio';
-        return bot('Vamos lá! Qual flyer deseja gerar?');
-      }
-
       return bot('Caso queira criar outro flyer, diga "novo flyer".');
     }
 
     return bot('Não entendi. Pode reformular?');
 
-  } catch (error) {
-    console.error('Erro no chatEngine:', error);
-    Object.keys(context).forEach(k => delete context[k]);
+  } catch (err) {
+    console.error(err);
     context.step = 'inicio';
     return bot('Ocorreu um erro. Vamos recomeçar.');
   }
