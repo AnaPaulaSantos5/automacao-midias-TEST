@@ -1,256 +1,221 @@
 import { resolverProduto } from './resolverProduto';
+import { initialState } from './state';
 
-export function chatEngine(message, context = {}) {
-  const texto = (message || '').trim();
+export function chatEngine(userText, state = initialState) {
+  const texto = userText.toLowerCase();
 
-  // 🔴 Estado inicial
-  if (!context.etapa) {
-    context.etapa = 'START';
-    return responder(
-      'Olá! Sou o Flyer AI da Confi. Me diga qual flyer deseja criar: Consórcio, Seguro ou Benefícios.'
-    );
+  /* =====================
+     INÍCIO
+  ===================== */
+  if (state.etapa === 'inicio') {
+    state.etapa = 'aguardando_produto';
+    return {
+      resposta: 'Olá! Qual flyer deseja gerar? Seguro, Finanças ou Benefícios?',
+      state
+    };
   }
 
-  switch (context.etapa) {
+  /* =====================
+     PRODUTO PRINCIPAL
+  ===================== */
+  if (state.etapa === 'aguardando_produto') {
+    const produto = resolverProduto(texto);
 
-    /* =========================
-       START - Escolha do produto
-    ========================= */
-    case 'START': {
-      const produto = resolverProduto(texto);
-
-      if (!produto) {
-        return responder(
-          'Não entendi o produto. Pode me dizer, por exemplo: Consórcio, Seguro ou Benefícios.'
-        );
-      }
-
-      context.produto = produto;
-      context.area = produto.area;
-
-      // Fluxo Consórcio
-      if (produto.key === 'consorcio') {
-        context.etapa = 'CONSORCIO_TIPO';
-        return responder('Qual tipo de consórcio? Imóvel, Automóvel ou Pesados?');
-      }
-
-      // Fluxo Seguro
-      if (produto.area === 'confi-seguros') {
-        context.etapa = 'SEGURO_TIPO';
-        return responder('Qual seguro deseja criar? Residencial, Auto ou Vida?');
-      }
-
-      // Fluxo Benefícios
-      if (produto.area === 'confi-beneficios') {
-        context.etapa = 'BENEFICIO_TIPO';
-        return responder('Qual produto deseja criar? Saúde, Odonto ou Pet?');
-      }
-
-      return responder('Houve um problema ao identificar o produto. Vamos recomeçar.');
-    }
-
-    /* =========================
-       CONSÓRCIO
-    ========================= */
-    case 'CONSORCIO_TIPO': {
-      const tipo = texto.toLowerCase();
-      if (!context.produto.subtipos[tipo]) {
-        return responder('Tipo inválido. Use: Imóvel, Automóvel ou Pesados.');
-      }
-      context.subproduto = context.produto.subtipos[tipo];
-      context.etapa = 'CONSORCIO_MESES';
-      return responder('Quantos meses terá o grupo? (Ex: 200)');
-    }
-
-    case 'CONSORCIO_MESES': {
-      const meses = parseInt(texto);
-      if (isNaN(meses) || meses <= 0) {
-        return responder('Número de meses inválido. Digite apenas números, ex: 200.');
-      }
-      context.meses = meses;
-      context.etapa = 'CONSORCIO_CAMPANHA';
-      return responder('Qual campanha deseja destacar? Ex: parcelas reduzidas, taxa zero, lance embutido…');
-    }
-
-    case 'CONSORCIO_CAMPANHA': {
-      context.textoPrincipal = texto; // Texto principal = campanha
-      context.etapa = 'CONSORCIO_TABELA_COLUNAS';
-      return responder('Agora me informe os títulos das colunas da tabela (ou digite "padrão")');
-    }
-
-    case 'CONSORCIO_TABELA_COLUNAS': {
-      context.tabela = { colunas: [], linhas: [] };
-      if (texto.toLowerCase() !== 'padrão') {
-        context.tabela.colunas = texto.split(',').map(v => v.trim());
-      } else {
-        context.tabela.colunas = ['Crédito', 'Taxa Adm', 'Parcela Pessoa Física', 'Parcela Pessoa Jurídica'];
-      }
-      context.etapa = 'CONSORCIO_TABELA_LINHAS';
-      return responder('Envie as linhas da tabela uma por mensagem ou digite "continuar" quando terminar.');
-    }
-
-    case 'CONSORCIO_TABELA_LINHAS': {
-      if (texto.toLowerCase() === 'continuar') {
-        context.etapa = 'CONSORCIO_TEXTO_COMPLEMENTAR';
-        return responder('Deseja adicionar um texto complementar? (opcional, digite "Não" se não houver)');
-      }
-      context.tabela.linhas.push(texto.split(',').map(v => v.trim()));
-      return responder('Linha adicionada. Envie outra ou digite "continuar".');
-    }
-
-    case 'CONSORCIO_TEXTO_COMPLEMENTAR': {
-      context.textoComplementar = texto.toLowerCase() === 'não' ? null : texto;
-      context.etapa = 'CONSORCIO_CONFIRMACAO';
-      return resumoConsorcio(context);
-    }
-
-    case 'CONSORCIO_CONFIRMACAO': {
-      if (texto.toLowerCase() === 'sim') {
-        return {
-          gerarPrompt: true,
-          context
-        };
-      }
-      context.etapa = 'START';
-      return responder('Ok. Vamos ajustar. Me diga novamente o produto.');
-    }
-
-    /* =========================
-       SEGUROS
-    ========================= */
-    case 'SEGURO_TIPO': {
-      const tipo = texto.toLowerCase();
-      const seguroMap = {
-        residencial: 'seguro_residencial',
-        auto: 'seguro_auto',
-        vida: 'seguro_vida'
+    if (!produto) {
+      return {
+        resposta: 'Não entendi. Você deseja Seguro, Finanças ou Benefícios?',
+        state
       };
-      if (!seguroMap[tipo]) {
-        return responder('Tipo inválido. Use: Residencial, Auto ou Vida.');
-      }
-      context.produto = produtos[seguroMap[tipo]];
-      context.etapa = 'SEGURO_TEXTO_PRINCIPAL';
-      return responder('Deseja escrever a frase principal ou prefere que eu gere automaticamente? (A = escrever | B = gerar)');
     }
 
-    case 'SEGURO_TEXTO_PRINCIPAL': {
-      if (texto.toUpperCase() === 'A') {
-        context.etapa = 'SEGURO_TEXTO_PRINCIPAL_INPUT';
-        return responder('Digite o texto principal do seguro:');
-      }
-      context.textoPrincipal = null; // Irá gerar automaticamente
-      context.etapa = 'SEGURO_TEXTO_COMPLEMENTAR';
-      return responder('Perfeito. Vou gerar o texto automaticamente. Deseja adicionar um texto complementar? (opcional)');
-    }
+    state.produto = produto;
 
-    case 'SEGURO_TEXTO_PRINCIPAL_INPUT': {
-      context.textoPrincipal = texto;
-      context.etapa = 'SEGURO_TEXTO_COMPLEMENTAR';
-      return responder('Texto salvo. Deseja adicionar um texto complementar? (opcional, digite "Não" se não houver)');
-    }
-
-    case 'SEGURO_TEXTO_COMPLEMENTAR': {
-      context.textoComplementar = texto.toLowerCase() === 'não' ? null : texto;
-      context.etapa = 'SEGURO_CONFIRMACAO';
-      return resumoSeguro(context);
-    }
-
-    case 'SEGURO_CONFIRMACAO': {
-      if (texto.toLowerCase() === 'sim') {
-        return {
-          gerarPrompt: true,
-          context
-        };
-      }
-      context.etapa = 'START';
-      return responder('Ok. Vamos ajustar. Me diga novamente o produto.');
-    }
-
-    /* =========================
-       BENEFÍCIOS
-    ========================= */
-    case 'BENEFICIO_TIPO': {
-      const tipo = texto.toLowerCase();
-      const beneficioMap = {
-        saude: 'plano_saude',
-        odonto: 'seguro_odonto',
-        pet: 'seguro_pet'
+    /* === FINANÇAS === */
+    if (produto.key === 'consorcio') {
+      state.etapa = 'consorcio_subtipo';
+      return {
+        resposta: 'Qual tipo de consórcio? Imóvel, Automóvel ou Pesados?',
+        state
       };
-      if (!beneficioMap[tipo]) {
-        return responder('Produto inválido. Use: Saúde, Odonto ou Pet.');
-      }
-      context.produto = produtos[beneficioMap[tipo]];
-      context.etapa = 'BENEFICIO_LISTA';
-      return responder('Deseja usar a lista padrão de benefícios ou personalizar? (A = padrão | B = personalizar)');
     }
 
-    case 'BENEFICIO_LISTA': {
-      if (texto.toUpperCase() === 'A') {
-        context.listaPadrao = true;
-      } else {
-        context.listaPadrao = false;
-      }
-      context.etapa = 'BENEFICIO_CONFIRMACAO';
-      return resumoBeneficio(context);
+    /* === SEGUROS === */
+    if (produto.area === 'confi-seguros') {
+      state.etapa = 'seguro_subtipo';
+      return {
+        resposta: 'Qual tipo de seguro deseja criar? Residencial ou Auto?',
+        state
+      };
     }
 
-    case 'BENEFICIO_CONFIRMACAO': {
-      if (texto.toLowerCase() === 'sim') {
-        return {
-          gerarPrompt: true,
-          context
-        };
-      }
-      context.etapa = 'START';
-      return responder('Ok. Vamos ajustar. Me diga novamente o produto.');
+    /* === BENEFÍCIOS === */
+    if (produto.area === 'confi-beneficios') {
+      state.etapa = 'beneficios_subtipo';
+      return {
+        resposta: 'Qual benefício deseja criar? Odonto, Saúde ou Pet?',
+        state
+      };
     }
-
-    /* =========================
-       DEFAULT
-    ========================= */
-    default:
-      context.etapa = 'START';
-      return responder(
-        'Houve um problema no fluxo. Vamos recomeçar. Qual flyer deseja criar?'
-      );
   }
+
+  /* =====================
+     CONSÓRCIO
+  ===================== */
+  if (state.etapa === 'consorcio_subtipo') {
+    if (!texto.includes('imovel') && !texto.includes('automovel') && !texto.includes('pesados')) {
+      return { resposta: 'Escolha: Imóvel, Automóvel ou Pesados.', state };
+    }
+
+    state.subtipo = texto.includes('imovel') ? 'imovel' :
+                    texto.includes('automovel') ? 'automovel' : 'pesados';
+
+    state.etapa = 'consorcio_meses';
+    return { resposta: 'Quantos meses terá o grupo? (Ex: 200)', state };
+  }
+
+  if (state.etapa === 'consorcio_meses') {
+    const meses = parseInt(texto);
+    if (!meses) {
+      return { resposta: 'Informe apenas o número de meses.', state };
+    }
+
+    state.meses = meses;
+    state.etapa = 'consorcio_campanha';
+    return {
+      resposta: 'Qual campanha deseja destacar? Ex: parcelas reduzidas, taxa zero, lance embutido…',
+      state
+    };
+  }
+
+  if (state.etapa === 'consorcio_campanha') {
+    state.campanha = userText;
+    state.textoPrincipal = userText; // REGRA CRÍTICA
+    state.etapa = 'consorcio_colunas';
+    return {
+      resposta: 'Informe os títulos das colunas da tabela ou digite "padrão".',
+      state
+    };
+  }
+
+  if (state.etapa === 'consorcio_colunas') {
+    state.colunasTabela =
+      texto === 'padrão'
+        ? ['Crédito', 'Taxa Adm', 'Parcela PF', 'Parcela PJ']
+        : userText.split(',').map(c => c.trim());
+
+    state.etapa = 'consorcio_linhas';
+    return {
+      resposta: 'Envie as linhas da tabela (uma por mensagem) ou digite "continuar".',
+      state
+    };
+  }
+
+  if (state.etapa === 'consorcio_linhas') {
+    if (texto === 'continuar') {
+      state.etapa = 'consorcio_texto_complementar';
+      return {
+        resposta: 'Deseja adicionar um texto complementar? (opcional, digite "Não" se não houver)',
+        state
+      };
+    }
+
+    state.linhasTabela.push(userText);
+    return { resposta: 'Linha adicionada. Envie outra ou digite "continuar".', state };
+  }
+
+  if (state.etapa === 'consorcio_texto_complementar') {
+    state.textoComplementar = texto === 'não' ? null : userText;
+    state.etapa = 'final';
+  }
+
+  /* =====================
+     BENEFÍCIOS – ODONTO
+  ===================== */
+  if (state.etapa === 'beneficios_subtipo') {
+    if (texto.includes('odonto')) {
+      state.subtipo = 'odonto';
+      state.etapa = 'odonto_itens';
+      return {
+        resposta:
+          'Itens padrão:\n1. Consultas\n2. Canal\n3. Extração\n4. Emergências\n5. Restauração\n6. Limpeza\nDeseja usar o padrão ou informar outros?',
+        state
+      };
+    }
+
+    if (texto.includes('saude') || texto.includes('pet')) {
+      state.subtipo = texto.includes('saude') ? 'saude' : 'pet';
+      state.etapa = 'beneficios_frases';
+      return {
+        resposta: 'Deseja escrever as frases ou gerar automaticamente? (A = escrever | B = gerar)',
+        state
+      };
+    }
+
+    return { resposta: 'Escolha: Odonto, Saúde ou Pet.', state };
+  }
+
+  if (state.etapa === 'odonto_itens') {
+    if (texto.includes('padrão')) {
+      state.itens = ['Consultas', 'Canal', 'Extração', 'Emergências', 'Restauração', 'Limpeza'];
+      state.etapa = 'beneficios_frases';
+      return {
+        resposta: 'Deseja escrever as frases ou gerar automaticamente? (A = escrever | B = gerar)',
+        state
+      };
+    }
+
+    state.itens = userText.split('\n');
+    state.etapa = 'beneficios_frases';
+    return {
+      resposta: 'Deseja escrever as frases ou gerar automaticamente? (A = escrever | B = gerar)',
+      state
+    };
+  }
+
+  /* =====================
+     FRASES BENEFÍCIOS
+  ===================== */
+  if (state.etapa === 'beneficios_frases') {
+    if (texto === 'b') {
+      state.textoPrincipal = 'Gerar automaticamente';
+      state.textoComplementar = 'Gerar automaticamente';
+      state.etapa = 'final';
+      return gerarResumo(state);
+    }
+
+    if (texto === 'a') {
+      state.etapa = 'frase_1';
+      return { resposta: 'Escreva a primeira frase (destaque maior):', state };
+    }
+  }
+
+  if (state.etapa === 'frase_1') {
+    state.textoPrincipal = userText;
+    state.etapa = 'frase_2';
+    return { resposta: 'Agora escreva a segunda frase:', state };
+  }
+
+  if (state.etapa === 'frase_2') {
+    state.textoComplementar = userText;
+    state.etapa = 'final';
+  }
+
+  /* =====================
+     FINAL
+  ===================== */
+  if (state.etapa === 'final') {
+    return gerarResumo(state);
+  }
+
+  return { resposta: 'Algo deu errado. Reiniciando fluxo.', state: initialState };
 }
 
-/* =========================
-   HELPERS
-========================= */
-
-function responder(content) {
-  return { role: 'assistant', content };
-}
-
-function resumoConsorcio(context) {
-  return responder(`Perfeito! Confira os dados:
-
-Produto: ${context.produto.nomeExibicao}
-Tipo: ${context.subproduto.nomeExibicao}
-Meses: ${context.meses}
-Texto principal: ${context.textoPrincipal}
-Texto complementar: ${context.textoComplementar || 'Não'}
-
-Prompt pronto para gerar? (Sim / Ajustar)`);
-}
-
-function resumoSeguro(context) {
-  return responder(`Perfeito! Confira os dados:
-
-Produto: ${context.produto.nomeExibicao}
-Texto principal: ${context.textoPrincipal || 'Será gerado automaticamente'}
-Texto complementar: ${context.textoComplementar || 'Não'}
-
-Prompt pronto para gerar? (Sim / Ajustar)`);
-}
-
-function resumoBeneficio(context) {
-  return responder(`Perfeito! Confira os dados:
-
-Produto: ${context.produto.nomeExibicao}
-Lista padrão: ${context.listaPadrao ? 'Sim' : 'Personalizada'}
-
-Prompt pronto para gerar? (Sim / Ajustar)`);
+/* =====================
+   RESUMO FINAL
+===================== */
+function gerarResumo(state) {
+  return {
+    resposta: `Perfeito! Prompt pronto para API.\nProduto: ${state.produto.nomeExibicao}\nSubtipo: ${state.subtipo || '-'}\nTexto principal: ${state.textoPrincipal}\nTexto complementar: ${state.textoComplementar || 'Não informado'}\nDeseja gerar a imagem agora?`,
+    state
+  };
 }
