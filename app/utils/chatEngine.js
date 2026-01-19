@@ -1,5 +1,5 @@
 import { resolverProduto } from './resolverProduto';
-import { initialState } from './data/state';
+import { initialState } from '../data/state';
 
 export function chatEngine(userText, state = initialState) {
   const texto = userText.toLowerCase();
