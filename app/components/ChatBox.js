@@ -1,71 +1,91 @@
-'use client';
+// app/utils/chatEngine.js
+import { initialState } from './state';
 
-import { useState, useRef } from 'react';
-import { chatEngine } from '../utils/chatEngine';
+export function chatEngine(message, state = initialState) {
+  const texto = (message || '').toLowerCase().trim();
+  const newState = { ...state };
 
-export default function ChatBox() {
-  const [messages, setMessages] = useState([]);
-  const [input, setInput] = useState('');
-  const contextRef = useRef({}); // CONTEXTO PERSISTENTE
-
-  const sendMessage = () => {
-    if (!input.trim()) return;
-
-    const userMsg = {
-      role: 'user',
-      content: input
+  /* ================= START ================= */
+  if (state.etapa === 'START') {
+    newState.etapa = 'ESCOLHER_AREA';
+    return {
+      resposta: 'Olá! Qual área deseja? Seguros, Finanças ou Benefícios?',
+      state: newState
     };
+  }
 
-    const resposta = chatEngine(input, contextRef.current);
-
-    // 🔒 PROTEÇÃO ABSOLUTA
-    if (!resposta || !resposta.content) {
-      setMessages(prev => [...prev, userMsg]);
-      setInput('');
-      return;
+  /* ================= ÁREA ================= */
+  if (state.etapa === 'ESCOLHER_AREA') {
+    if (texto.includes('seguro')) {
+      newState.area = 'confi-seguros';
+      newState.etapa = 'ESCOLHER_SEGURO';
+      return { resposta: 'Qual tipo de seguro? Geral ou Residencial?', state: newState };
     }
 
-    const botMsg = {
-      role: 'assistant',
-      content: resposta.content
-    };
-
-    setMessages(prev => [
-      ...prev,
-      userMsg,
-      botMsg
-    ]);
-
-    // Caso especial: prompt pronto para API
-    if (resposta.gerarPrompt) {
-      console.log('Payload para API:', resposta.payload);
-      // aqui você liga com a geração de imagem depois
+    if (texto.includes('finan') || texto.includes('consor')) {
+      newState.area = 'confi-financas';
+      newState.etapa = 'ESCOLHER_CONSORCIO';
+      return { resposta: 'Qual tipo de consórcio? Imóvel, Automóvel ou Pesados?', state: newState };
     }
 
-    setInput('');
-  };
+    if (texto.includes('benef')) {
+      newState.area = 'confi-beneficios';
+      newState.etapa = 'ESCOLHER_BENEFICIO';
+      return { resposta: 'Qual produto deseja? Saúde, Odonto ou Pet?', state: newState };
+    }
 
-  return (
-    <div style={{ maxWidth: 600, margin: '0 auto' }}>
-      <div style={{ minHeight: 300, border: '1px solid #ccc', padding: 10 }}>
-        {messages.map((m, i) => (
-          <div key={i} style={{ marginBottom: 8 }}>
-            <strong>{m.role}:</strong> {m.content}
-          </div>
-        ))}
-      </div>
+    return { resposta: 'Não entendi. Escolha Seguros, Finanças ou Benefícios.', state };
+  }
 
-      <input
-        value={input}
-        onChange={e => setInput(e.target.value)}
-        onKeyDown={e => e.key === 'Enter' && sendMessage()}
-        placeholder="Digite sua mensagem..."
-        style={{ width: '100%', marginTop: 10 }}
-      />
+  /* ================= SEGUROS ================= */
+  if (state.etapa === 'ESCOLHER_SEGURO') {
+    if (texto.includes('resid')) {
+      newState.subproduto = 'residencial';
+      newState.etapa = 'FINAL';
+      return {
+        resposta: 'Perfeito! Vou preparar o flyer conforme o padrão da Confi Seguros.',
+        state: newState
+      };
+    }
 
-      <button onClick={sendMessage} style={{ marginTop: 10 }}>
-        Enviar
-      </button>
-    </div>
-  );
+    if (texto.includes('geral')) {
+      newState.subproduto = 'geral';
+      newState.etapa = 'FINAL';
+      return {
+        resposta: 'Perfeito! Vou preparar o flyer conforme o padrão da Confi Seguros.',
+        state: newState
+      };
+    }
+
+    return { resposta: 'Escolha Geral ou Residencial.', state };
+  }
+
+  /* ================= BENEFÍCIOS ================= */
+  if (state.etapa === 'ESCOLHER_BENEFICIO') {
+    if (['odonto', 'saúde', 'saude', 'pet'].some(p => texto.includes(p))) {
+      newState.subproduto = texto.includes('pet')
+        ? 'pet'
+        : texto.includes('odonto')
+        ? 'odonto'
+        : 'saude';
+
+      newState.etapa = 'FINAL';
+      return {
+        resposta: 'Perfeito! Prompt do flyer de Benefícios pronto.',
+        state: newState
+      };
+    }
+
+    return { resposta: 'Escolha Saúde, Odonto ou Pet.', state };
+  }
+
+  /* ================= FINAL ================= */
+  if (state.etapa === 'FINAL') {
+    return {
+      resposta: 'Tudo pronto. Posso gerar o flyer agora.',
+      state
+    };
+  }
+
+  return { resposta: 'Erro de fluxo.', state };
 }
