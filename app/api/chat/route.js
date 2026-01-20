@@ -1,27 +1,24 @@
-import { chatEngine } from '../../utils/chatEngine';
-import { gerarPrompt } from '../../utils/gerarPrompt';
-import { initialState } from '../../utils/initialState';
-
-let state = { ...initialState };
+import { chatEngine } from '../app/utils/chatEngine';
+import { initialState } from '../app/data/state';
 
 export async function POST(req) {
-  const { message } = await req.json();
+  try {
+    const { message, state } = await req.json();
 
-  const resposta = chatEngine(message, state);
+    const result = chatEngine(message, state);
 
-  // Se chegou ao fim do fluxo, gera o prompt
-  if (state.etapa === 'FINAL') {
-    const promptFinal = gerarPrompt(state);
+    if (!result?.state || !result?.resposta) {
+      return Response.json({
+        resposta: 'Erro interno. Reiniciando conversa.',
+        state: initialState
+      });
+    }
 
+    return Response.json(result);
+  } catch (error) {
     return Response.json({
-      reply: resposta,
-      prompt: promptFinal,
-      state
+      resposta: 'Erro inesperado. Vamos começar de novo.',
+      state: initialState
     });
   }
-
-  return Response.json({
-    reply: resposta,
-    state
-  });
 }
