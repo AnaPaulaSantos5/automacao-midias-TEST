@@ -31,8 +31,8 @@ export function chatEngine(message, state = initialState) {
       };
 
     case 'AREA':
-      if (texto.includes('seguro')) {
-        novoState.area = 'seguros';
+      if (texto.includes('seguros')) {
+        novoState.area = 'confi-seguros';
         novoState.etapa = 'TIPO_SEGURO';
         return {
           resposta: 'Perfeito. Qual tipo de seguro? Geral ou Residencial?',
