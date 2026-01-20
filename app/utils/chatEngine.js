@@ -1,5 +1,5 @@
 // app/utils/chatEngine.js
-import { initialState } from '../state';
+import { initialState } from '../data/state';
 
 export function chatEngine(message, state = initialState) {
   const texto = (message || '').toLowerCase().trim();
