@@ -1,57 +1,52 @@
 'use client';
 
 import { useState } from 'react';
-import { initialState } from '../app/data/state';
+import { initialState } from '@/app/data/state';
 
 export default function ChatBox() {
-  const [mensagens, setMensagens] = useState([]);
-  const [texto, setTexto] = useState('');
+  const [messages, setMessages] = useState([]);
+  const [input, setInput] = useState('');
   const [state, setState] = useState(initialState);
 
-  async function enviarMensagem(e) {
-    e.preventDefault();
-    if (!texto.trim()) return;
+  async function sendMessage() {
+    if (!input.trim()) return;
 
-    const userMsg = texto;
-    setTexto('');
-    setMensagens(prev => [...prev, { autor: 'user', texto: userMsg }]);
+    const userMsg = { role: 'user', text: input };
+    setMessages(prev => [...prev, userMsg]);
+    setInput('');
 
     const res = await fetch('/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        message: userMsg,
-        state
-      })
+      body: JSON.stringify({ message: input, state })
     });
 
     const data = await res.json();
 
-    if (!data?.resposta || !data?.state) {
-      console.error('Resposta inválida da API', data);
-      return;
+    if (data.state?.etapa) {
+      setState(data.state);
     }
 
-    setMensagens(prev => [...prev, { autor: 'bot', texto: data.resposta }]);
-    setState(data.state);
+    setMessages(prev => [
+      ...prev,
+      { role: 'bot', text: data.resposta }
+    ]);
   }
 
   return (
-    <div style={{ maxWidth: 500, margin: '0 auto' }}>
-      <div style={{ minHeight: 300, border: '1px solid #ccc', padding: 10 }}>
-        {mensagens.map((m, i) => (
-          <p key={i}><strong>{m.autor}:</strong> {m.texto}</p>
+    <div>
+      <div>
+        {messages.map((m, i) => (
+          <p key={i}><strong>{m.role}:</strong> {m.text}</p>
         ))}
       </div>
 
-      <form onSubmit={enviarMensagem}>
-        <input
-          value={texto}
-          onChange={e => setTexto(e.target.value)}
-          placeholder="Digite aqui..."
-          style={{ width: '100%', padding: 8 }}
-        />
-      </form>
+      <input
+        value={input}
+        onChange={e => setInput(e.target.value)}
+        onKeyDown={e => e.key === 'Enter' && sendMessage()}
+      />
+      <button onClick={sendMessage}>Enviar</button>
     </div>
   );
 }
