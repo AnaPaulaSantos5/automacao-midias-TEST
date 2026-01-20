@@ -1,5 +1,5 @@
 export function gerarPrompt(state) {
-  if (!state || !state.produto) {
+  if (!state || !state.area) {
     throw new Error('State inválido');
   }
 
