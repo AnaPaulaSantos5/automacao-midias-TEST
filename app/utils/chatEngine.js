@@ -1,4 +1,4 @@
-import { initialState } from '@/app/data/state';
+import { initialState } from '../data/state';
 
 function garantirState(state) {
   return {
