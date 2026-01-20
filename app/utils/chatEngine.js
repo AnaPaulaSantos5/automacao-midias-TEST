@@ -7,7 +7,10 @@ function garantirState(state) {
     area: state.area ?? null,
     subproduto: state.subproduto ?? null,
     meses: state.meses ?? null,
-    campanha: state.campanha ?? null,
+    campanha:
+  state.campanha && typeof state.campanha === 'object'
+    ? state.campanha
+    : null,
     tabela: state.tabela || { colunas: [], linhas: [] },
     textoPrincipal: state.textoPrincipal ?? null,
     textoComplementar: state.textoComplementar ?? null,
