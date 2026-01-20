@@ -1,226 +1,91 @@
 // app/utils/chatEngine.js
+import { initialState } from './state';
 
-const normalizar = (texto = '') =>
-  texto
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .trim();
+export function chatEngine(message, state = initialState) {
+  const texto = (message || '').toLowerCase().trim();
+  const newState = { ...state };
 
-export function chatEngine(input, state) {
-  const mensagem = normalizar(input);
-
-  // ===============================
-  // PROTEÇÃO TOTAL DE STATE
-  // ===============================
-  if (!state || !state.etapa) {
-    return respostaInicial();
-  }
-
-  // ===============================
-  // START
-  // ===============================
+  /* ================= START ================= */
   if (state.etapa === 'START') {
+    newState.etapa = 'ESCOLHER_AREA';
     return {
       resposta: 'Olá! Qual área deseja? Seguros, Finanças ou Benefícios?',
-      state: {
-        ...state,
-        etapa: 'ESCOLHA_AREA'
-      }
+      state: newState
     };
   }
 
-  // ===============================
-  // ESCOLHA ÁREA
-  // ===============================
-  if (state.etapa === 'ESCOLHA_AREA') {
-    if (mensagem.includes('seguro')) {
-      return {
-        resposta: 'Perfeito. Qual tipo de seguro? Geral ou Residencial?',
-        state: {
-          ...state,
-          area: 'confi-seguros',
-          produto: 'seguros',
-          etapa: 'ESCOLHA_SEGURO'
-        }
-      };
+  /* ================= ÁREA ================= */
+  if (state.etapa === 'ESCOLHER_AREA') {
+    if (texto.includes('seguro')) {
+      newState.area = 'confi-seguros';
+      newState.etapa = 'ESCOLHER_SEGURO';
+      return { resposta: 'Qual tipo de seguro? Geral ou Residencial?', state: newState };
     }
 
-    if (mensagem.includes('financa') || mensagem.includes('consorcio')) {
-      return {
-        resposta: 'Qual tipo de consórcio? Imóvel, Automóvel ou Pesados?',
-        state: {
-          ...state,
-          area: 'confi-financas',
-          produto: 'financas',
-          etapa: 'ESCOLHA_CONSORCIO'
-        }
-      };
+    if (texto.includes('finan') || texto.includes('consor')) {
+      newState.area = 'confi-financas';
+      newState.etapa = 'ESCOLHER_CONSORCIO';
+      return { resposta: 'Qual tipo de consórcio? Imóvel, Automóvel ou Pesados?', state: newState };
     }
 
-    if (mensagem.includes('beneficio')) {
-      return {
-        resposta: 'Qual produto deseja criar? Saúde, Odonto ou Pet?',
-        state: {
-          ...state,
-          area: 'confi-beneficios',
-          produto: 'beneficios',
-          etapa: 'ESCOLHA_BENEFICIO'
-        }
-      };
+    if (texto.includes('benef')) {
+      newState.area = 'confi-beneficios';
+      newState.etapa = 'ESCOLHER_BENEFICIO';
+      return { resposta: 'Qual produto deseja? Saúde, Odonto ou Pet?', state: newState };
     }
 
-    return respostaErroArea(state);
+    return { resposta: 'Não entendi. Escolha Seguros, Finanças ou Benefícios.', state };
   }
 
-  // ===============================
-  // SEGUROS
-  // ===============================
-  if (state.etapa === 'ESCOLHA_SEGURO') {
-    if (mensagem.includes('residencial')) {
+  /* ================= SEGUROS ================= */
+  if (state.etapa === 'ESCOLHER_SEGURO') {
+    if (texto.includes('resid')) {
+      newState.subproduto = 'residencial';
+      newState.etapa = 'FINAL';
       return {
-        resposta: 'Deseja que eu gere a frase automaticamente ou prefere escrever?',
-        state: {
-          ...state,
-          subproduto: 'residencial',
-          etapa: 'SEGURO_TEXTO'
-        }
+        resposta: 'Perfeito! Vou preparar o flyer conforme o padrão da Confi Seguros.',
+        state: newState
       };
     }
 
-    if (mensagem.includes('geral')) {
+    if (texto.includes('geral')) {
+      newState.subproduto = 'geral';
+      newState.etapa = 'FINAL';
       return {
-        resposta: 'Deseja que eu gere a frase automaticamente ou prefere escrever?',
-        state: {
-          ...state,
-          subproduto: 'geral',
-          etapa: 'SEGURO_TEXTO'
-        }
+        resposta: 'Perfeito! Vou preparar o flyer conforme o padrão da Confi Seguros.',
+        state: newState
       };
     }
 
-    return respostaErroSeguro(state);
+    return { resposta: 'Escolha Geral ou Residencial.', state };
   }
 
-  if (state.etapa === 'SEGURO_TEXTO') {
-    if (mensagem.includes('gere')) {
+  /* ================= BENEFÍCIOS ================= */
+  if (state.etapa === 'ESCOLHER_BENEFICIO') {
+    if (['odonto', 'saúde', 'saude', 'pet'].some(p => texto.includes(p))) {
+      newState.subproduto = texto.includes('pet')
+        ? 'pet'
+        : texto.includes('odonto')
+        ? 'odonto'
+        : 'saude';
+
+      newState.etapa = 'FINAL';
       return {
-        resposta: 'Deseja incluir informações de rodapé? (Sim ou Não)',
-        state: {
-          ...state,
-          textoPrincipal: 'auto',
-          etapa: 'SEGURO_RODAPE'
-        }
+        resposta: 'Perfeito! Prompt do flyer de Benefícios pronto.',
+        state: newState
       };
     }
 
+    return { resposta: 'Escolha Saúde, Odonto ou Pet.', state };
+  }
+
+  /* ================= FINAL ================= */
+  if (state.etapa === 'FINAL') {
     return {
-      resposta: 'Escreva a frase principal do flyer.',
-      state: {
-        ...state,
-        etapa: 'SEGURO_TEXTO_MANUAL'
-      }
+      resposta: 'Tudo pronto. Posso gerar o flyer agora.',
+      state
     };
   }
 
-  if (state.etapa === 'SEGURO_TEXTO_MANUAL') {
-    return {
-      resposta: 'Deseja incluir informações de rodapé? (Sim ou Não)',
-      state: {
-        ...state,
-        textoPrincipal: input,
-        etapa: 'SEGURO_RODAPE'
-      }
-    };
-  }
-
-  if (state.etapa === 'SEGURO_RODAPE') {
-    return {
-      resposta: 'Perfeito! Posso gerar o flyer agora?',
-      state: {
-        ...state,
-        textoComplementar: mensagem.includes('sim'),
-        etapa: 'CONFIRMACAO_FINAL'
-      }
-    };
-  }
-
-  // ===============================
-  // CONFIRMAÇÃO FINAL
-  // ===============================
-  if (state.etapa === 'CONFIRMACAO_FINAL') {
-    if (mensagem === 'sim' || mensagem === 'ok' || mensagem === 'pode') {
-      return {
-        resposta: 'Flyer enviado para geração.',
-        state: {
-          ...state,
-          etapa: 'FINALIZADO'
-        },
-        acao: 'GERAR_FLYER'
-      };
-    }
-
-    return {
-      resposta: 'Tudo bem. Caso queira ajustar algo, é só dizer.',
-      state: {
-        ...state
-      }
-    };
-  }
-
-  // ===============================
-  // FINALIZADO
-  // ===============================
-  if (state.etapa === 'FINALIZADO') {
-    return {
-      resposta: 'Caso queira criar outro flyer, diga "novo flyer".',
-      state: {
-        ...state
-      }
-    };
-  }
-
-  // ===============================
-  // FALLBACK ABSOLUTO
-  // ===============================
-  return respostaFallback(state);
-}
-
-// ===============================
-// RESPOSTAS AUXILIARES
-// ===============================
-function respostaInicial() {
-  return {
-    resposta: 'Olá! Qual área deseja? Seguros, Finanças ou Benefícios?',
-    state: {
-      etapa: 'ESCOLHA_AREA',
-      produto: null,
-      area: null,
-      subproduto: null
-    }
-  };
-}
-
-function respostaErroArea(state) {
-  return {
-    resposta: 'Não entendi. Escolha entre Seguros, Finanças ou Benefícios.',
-    state: { ...state }
-  };
-}
-
-function respostaErroSeguro(state) {
-  return {
-    resposta: 'Escolha entre Seguro Geral ou Residencial.',
-    state: { ...state }
-  };
-}
-
-function respostaFallback(state) {
-  return {
-    resposta: 'Vamos recomeçar com segurança. Qual área deseja?',
-    state: {
-      ...state,
-      etapa: 'ESCOLHA_AREA'
-    }
-  };
+  return { resposta: 'Erro de fluxo.', state };
 }
