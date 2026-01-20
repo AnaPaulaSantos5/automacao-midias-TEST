@@ -1,91 +1,57 @@
-// app/utils/chatEngine.js
-import { initialState } from './state';
+'use client';
 
-export function chatEngine(message, state = initialState) {
-  const texto = (message || '').toLowerCase().trim();
-  const newState = { ...state };
+import { useState } from 'react';
+import { initialState } from '../app/data/state';
 
-  /* ================= START ================= */
-  if (state.etapa === 'START') {
-    newState.etapa = 'ESCOLHER_AREA';
-    return {
-      resposta: 'Olá! Qual área deseja? Seguros, Finanças ou Benefícios?',
-      state: newState
-    };
+export default function ChatBox() {
+  const [mensagens, setMensagens] = useState([]);
+  const [texto, setTexto] = useState('');
+  const [state, setState] = useState(initialState);
+
+  async function enviarMensagem(e) {
+    e.preventDefault();
+    if (!texto.trim()) return;
+
+    const userMsg = texto;
+    setTexto('');
+    setMensagens(prev => [...prev, { autor: 'user', texto: userMsg }]);
+
+    const res = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        message: userMsg,
+        state
+      })
+    });
+
+    const data = await res.json();
+
+    if (!data?.resposta || !data?.state) {
+      console.error('Resposta inválida da API', data);
+      return;
+    }
+
+    setMensagens(prev => [...prev, { autor: 'bot', texto: data.resposta }]);
+    setState(data.state);
   }
 
-  /* ================= ÁREA ================= */
-  if (state.etapa === 'ESCOLHER_AREA') {
-    if (texto.includes('seguro')) {
-      newState.area = 'confi-seguros';
-      newState.etapa = 'ESCOLHER_SEGURO';
-      return { resposta: 'Qual tipo de seguro? Geral ou Residencial?', state: newState };
-    }
+  return (
+    <div style={{ maxWidth: 500, margin: '0 auto' }}>
+      <div style={{ minHeight: 300, border: '1px solid #ccc', padding: 10 }}>
+        {mensagens.map((m, i) => (
+          <p key={i}><strong>{m.autor}:</strong> {m.texto}</p>
+        ))}
+      </div>
 
-    if (texto.includes('finan') || texto.includes('consor')) {
-      newState.area = 'confi-financas';
-      newState.etapa = 'ESCOLHER_CONSORCIO';
-      return { resposta: 'Qual tipo de consórcio? Imóvel, Automóvel ou Pesados?', state: newState };
-    }
-
-    if (texto.includes('benef')) {
-      newState.area = 'confi-beneficios';
-      newState.etapa = 'ESCOLHER_BENEFICIO';
-      return { resposta: 'Qual produto deseja? Saúde, Odonto ou Pet?', state: newState };
-    }
-
-    return { resposta: 'Não entendi. Escolha Seguros, Finanças ou Benefícios.', state };
-  }
-
-  /* ================= SEGUROS ================= */
-  if (state.etapa === 'ESCOLHER_SEGURO') {
-    if (texto.includes('resid')) {
-      newState.subproduto = 'residencial';
-      newState.etapa = 'FINAL';
-      return {
-        resposta: 'Perfeito! Vou preparar o flyer conforme o padrão da Confi Seguros.',
-        state: newState
-      };
-    }
-
-    if (texto.includes('geral')) {
-      newState.subproduto = 'geral';
-      newState.etapa = 'FINAL';
-      return {
-        resposta: 'Perfeito! Vou preparar o flyer conforme o padrão da Confi Seguros.',
-        state: newState
-      };
-    }
-
-    return { resposta: 'Escolha Geral ou Residencial.', state };
-  }
-
-  /* ================= BENEFÍCIOS ================= */
-  if (state.etapa === 'ESCOLHER_BENEFICIO') {
-    if (['odonto', 'saúde', 'saude', 'pet'].some(p => texto.includes(p))) {
-      newState.subproduto = texto.includes('pet')
-        ? 'pet'
-        : texto.includes('odonto')
-        ? 'odonto'
-        : 'saude';
-
-      newState.etapa = 'FINAL';
-      return {
-        resposta: 'Perfeito! Prompt do flyer de Benefícios pronto.',
-        state: newState
-      };
-    }
-
-    return { resposta: 'Escolha Saúde, Odonto ou Pet.', state };
-  }
-
-  /* ================= FINAL ================= */
-  if (state.etapa === 'FINAL') {
-    return {
-      resposta: 'Tudo pronto. Posso gerar o flyer agora.',
-      state
-    };
-  }
-
-  return { resposta: 'Erro de fluxo.', state };
+      <form onSubmit={enviarMensagem}>
+        <input
+          value={texto}
+          onChange={e => setTexto(e.target.value)}
+          placeholder="Digite aqui..."
+          style={{ width: '100%', padding: 8 }}
+        />
+      </form>
+    </div>
+  );
 }
