@@ -10,7 +10,7 @@ function getClient() {
   return new OpenAI({ apiKey });
 }
 
-export async function generateImage(prompt) {
+export async function gerarImagemDalle(prompt) {
   const openai = getClient();
 
   const result = await openai.images.generate({
@@ -19,5 +19,10 @@ export async function generateImage(prompt) {
     size: '1024x1024'
   });
 
-  return result.data[0].url;
+  return {
+    ok: true,
+    provider: 'DALLE',
+    imageUrl: result.data[0].url,
+    prompt
+  };
 }
