@@ -76,16 +76,34 @@ export function chatEngine(message, state = initialState) {
        TIPO DE SEGURO
     ========================= */
     case 'TIPO_SEGURO':
-      if (texto.includes('residencial')) {
-        novoState.tipoSeguro = 'residencial';
-        novoState.produto = 'seguro_residencial';
-        novoState.etapa = 'CONFIRMACAO';
+  if (texto.includes('residencial')) {
+    novoState.subproduto = 'residencial'; // 🔴 CAMPO CORRETO
+    novoState.produto = 'seguro_residencial';
+    novoState.etapa = 'CONFIRMACAO';
 
-        return {
-          resposta:
-            'Perfeito. Vou preparar o flyer conforme o padrão da Confi Seguros. Posso gerar agora?',
-          state: garantirState(novoState)
-        };
+    return {
+      resposta:
+        'Perfeito. Vou preparar o flyer conforme o padrão da Confi Seguros. Posso gerar agora?',
+      state: garantirState(novoState)
+    };
+  }
+
+  if (texto.includes('geral')) {
+    novoState.subproduto = 'geral'; // 🔴 CAMPO CORRETO
+    novoState.produto = 'seguro_geral';
+    novoState.etapa = 'CONFIRMACAO';
+
+    return {
+      resposta:
+        'Perfeito. Vou preparar o flyer conforme o padrão da Confi Seguros. Posso gerar agora?',
+      state: garantirState(novoState)
+    };
+  }
+
+  return {
+    resposta: 'Por favor, informe se o seguro é Geral ou Residencial.',
+    state: garantirState(novoState)
+  };
       }
 
       if (texto.includes('geral')) {
