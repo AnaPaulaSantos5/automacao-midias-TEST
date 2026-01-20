@@ -1,10 +1,27 @@
+// app/utils/state.js
 export const initialState = {
   etapa: 'START',
 
-  // Produto e área
-  produto: null, // ex: { key: 'consorcio', area: 'confi-financas' }
-  subtipo: null, // imovel | automovel | pesados | residencial | odonto | saude | pet
+  produto: null,
+  area: null,
 
+  // Consórcio
+  subproduto: null,
+  meses: null,
+  campanha: null,
+  tabela: {
+    colunas: [],
+    linhas: []
+  },
+
+  // Textos
+  textoPrincipal: null,
+  textoComplementar: null,
+
+  // Flags
+  aceitaTabela: false,
+  aceitaCampanha: false
+},
   /* =========================
      CONFI FINANÇAS — CONSÓRCIO
   ========================= */
