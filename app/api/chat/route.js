@@ -1,24 +1,21 @@
-import { chatEngine } from '../../utils/chatEngine';
-import { initialState } from '../../data/state';
+import { imageEngine } from '@/app/utils/imageEngine';
+import { IMAGE_PROVIDERS } from '@/app/utils/imageProviders';
 
-export async function POST(req) {
-  try {
-    const { message, state } = await req.json();
+...
 
-    const result = chatEngine(message, state);
+if (result.state.etapa === 'FINAL') {
+  const imageResult = await imageEngine(result.state, IMAGE_PROVIDERS.DALLE);
 
-    if (!result?.state || !result?.resposta) {
-      return Response.json({
-        resposta: 'Erro interno. Reiniciando conversa.',
-        state: initialState
-      });
-    }
-
-    return Response.json(result);
-  } catch (error) {
+  if (!imageResult.ok) {
     return Response.json({
-      resposta: 'Erro inesperado. Vamos começar de novo.',
-      state: initialState
+      resposta: imageResult.error,
+      state: result.state
     });
   }
+
+  return Response.json({
+    resposta: 'Imagem gerada com sucesso.',
+    imageUrl: imageResult.imageUrl,
+    state: result.state
+  });
 }
