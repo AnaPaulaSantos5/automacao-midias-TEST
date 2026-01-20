@@ -56,10 +56,11 @@ export async function imageEngine(state, provider = IMAGE_PROVIDERS.DALLE) {
         };
     }
   } catch (error) {
-    return {
-      ok: false,
-      provider,
-      error: 'Falha na geração da imagem'
-    };
-  }
+  console.error('[IMAGE ENGINE ERROR]', error);
+
+  return {
+    ok: false,
+    provider,
+    error: error.message || 'Falha na geração da imagem'
+  };
 }
