@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { initialState } from '@/app/data/state';
+import { initialState } from '../app/data/state';
 
 export default function ChatBox() {
   const [messages, setMessages] = useState([]);
