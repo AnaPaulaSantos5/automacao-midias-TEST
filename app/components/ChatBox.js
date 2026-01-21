@@ -10,63 +10,60 @@ export default function ChatBox() {
   async function sendMessage() {
     if (!input.trim()) return;
 
-    const userMessage = { role: 'user', text: input };
-    setMessages(prev => [...prev, userMessage]);
-    setInput('');
+    setMessages(m => [...m, { role: 'user', text: input }]);
 
     const res = await fetch('/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        message: input,
-        state
-      })
+      body: JSON.stringify({ message: input, state })
     });
 
     const data = await res.json();
 
-    const botMessage = {
-      role: 'bot',
-      text: data.resposta,
-      imageUrl: data.imageUrl || null
-    };
+    setMessages(m => [
+      ...m,
+      {
+        role: 'bot',
+        text: data.resposta,
+        image: data.imageBase64 || null
+      }
+    ]);
 
-    setMessages(prev => [...prev, botMessage]);
     setState(data.state);
+    setInput('');
   }
 
   return (
     <div style={{ maxWidth: 600, margin: '0 auto' }}>
-      <div>
-        {messages.map((msg, index) => (
-          <div key={index} style={{ marginBottom: 16 }}>
-            <strong>{msg.role === 'user' ? 'Você' : 'Bot'}:</strong>
-            <div>{msg.text}</div>
+      {messages.map((m, i) => (
+        <div key={i} style={{ marginBottom: 16 }}>
+          <strong>{m.role === 'user' ? 'Você' : 'Bot'}:</strong>
+          <div>{m.text}</div>
 
-            {msg.imageUrl && (
+          {m.image && (
+            <>
               <img
-                src={msg.imageUrl}
-                alt="Flyer gerado"
-                style={{
-                  marginTop: 8,
-                  width: '100%',
-                  borderRadius: 8
-                }}
+                src={`data:image/png;base64,${m.image}`}
+                style={{ width: '100%', marginTop: 8 }}
               />
-            )}
-          </div>
-        ))}
-      </div>
+              <a
+                href={`data:image/png;base64,${m.image}`}
+                download="flyer-confi.png"
+              >
+                Baixar imagem
+              </a>
+            </>
+          )}
+        </div>
+      ))}
 
-      <div style={{ display: 'flex', gap: 8 }}>
-        <input
-          value={input}
-          onChange={e => setInput(e.target.value)}
-          placeholder="Digite sua mensagem"
-          style={{ flex: 1 }}
-        />
-        <button onClick={sendMessage}>Enviar</button>
-      </div>
+      <input
+        value={input}
+        onChange={e => setInput(e.target.value)}
+        onKeyDown={e => e.key === 'Enter' && sendMessage()}
+        placeholder="Digite sua mensagem"
+      />
+      <button onClick={sendMessage}>Enviar</button>
     </div>
   );
 }
