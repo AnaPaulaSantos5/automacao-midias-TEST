@@ -8,7 +8,7 @@ export async function POST() {
     hasKey: !!process.env.OPENAI_API_KEY,
     keyLength: process.env.OPENAI_API_KEY?.length || 0
   });
-}
+
 
     /* =========================
        ETAPA FINAL → GERAR IMAGEM
