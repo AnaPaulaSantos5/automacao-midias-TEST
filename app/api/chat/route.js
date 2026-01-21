@@ -1,4 +1,4 @@
-import { chatEngine } from './app/utils/chatEngine';
+import { chatEngine } from '../chatEngine';
 import { initialState } from '../app/data/state';
 
 export async function POST(req) {
