@@ -1,44 +1,42 @@
-import { NextResponse } from 'next/server';
-import { initialState } from '../../data/state';
-import { gerarFlyerSeguroResidencial } from '../../utils/imageEngine';
+import { chatEngine } from '@/app/utils/chatEngine';
+import { imageEngine } from '@/app/utils/imageEngine';
+import { initialState } from '@/app/data/state';
 
 export async function POST(req) {
   try {
     const body = await req.json();
     const { message, state = initialState } = body;
 
-    // FLUXO FINAL
-    if (state.etapa === 'FINAL') {
-      // 🔴 GERA A IMAGEM DE VERDADE
-      const imageResult = await gerarFlyerSeguroResidencial(state);
+    // 1. Processa conversa
+    const result = chatEngine(message, state);
 
-      if (!imageResult || !imageResult.imageUrl) {
-        return NextResponse.json({
-          resposta: 'Erro ao gerar o flyer.',
-          state
-        });
-      }
+    // 2. Se ainda não é final, só responde
+    if (result.state.etapa !== 'FINAL') {
+      return Response.json(result);
+    }
 
-      return NextResponse.json({
-        resposta: 'Flyer gerado com sucesso.',
-        imageUrl: imageResult.imageUrl,
-        state
+    // 3. Geração da imagem
+    const imageResult = await imageEngine(result.state);
+
+    if (!imageResult.ok) {
+      return Response.json({
+        resposta: imageResult.error,
+        state: result.state
       });
     }
 
-    // Fluxo normal (simplificado)
-    return NextResponse.json({
-      resposta: 'Fluxo em andamento...',
-      state
+    return Response.json({
+      resposta: 'Flyer gerado com sucesso.',
+      imageUrl: imageResult.imageUrl,
+      state: result.state
     });
 
   } catch (error) {
-    console.error('Erro no chat:', error);
+    console.error('[CHAT API ERROR]', error);
 
-    return NextResponse.json(
-      { resposta: 'Erro interno no servidor.' },
-      { status: 500 }
-    );
+    return Response.json({
+      resposta: 'Erro inesperado. Vamos começar de novo.',
+      state: initialState
+    });
   }
 }
-
