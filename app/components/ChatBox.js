@@ -10,7 +10,7 @@ export default function ChatBox() {
   async function sendMessage() {
     if (!input.trim()) return;
 
-    setMessages(m => [...m, { role: 'user', text: input }]);
+    setMessages(prev => [...prev, { role: 'user', text: input }]);
 
     const res = await fetch('/api/chat', {
       method: 'POST',
@@ -20,12 +20,12 @@ export default function ChatBox() {
 
     const data = await res.json();
 
-    setMessages(m => [
-      ...m,
+    setMessages(prev => [
+      ...prev,
       {
         role: 'bot',
         text: data.resposta,
-        image: data.imageBase64 || null
+        imageBase64: data.imageBase64 || null
       }
     ]);
 
@@ -40,14 +40,15 @@ export default function ChatBox() {
           <strong>{m.role === 'user' ? 'Você' : 'Bot'}:</strong>
           <div>{m.text}</div>
 
-          {m.image && (
+          {m.imageBase64 && (
             <>
               <img
-                src={`data:image/png;base64,${m.image}`}
+                src={`data:image/png;base64,${m.imageBase64}`}
+                alt="Flyer gerado"
                 style={{ width: '100%', marginTop: 8 }}
               />
               <a
-                href={`data:image/png;base64,${m.image}`}
+                href={`data:image/png;base64,${m.imageBase64}`}
                 download="flyer-confi.png"
               >
                 Baixar imagem
