@@ -1,37 +1,67 @@
 import { chatEngine } from '../../utils/chatEngine';
 import { imageEngine } from '../../utils/imageEngine';
 import { initialState } from '../../data/state';
+
 export async function POST(req) {
   try {
-    const body = await req.json();
-    const { message, state = initialState } = body;
-
-    // 1. Processa conversa
-    const result = chatEngine(message, state);
-
-    // 2. Se ainda não é final, só responde
-    if (result.state.etapa !== 'FINAL') {
-      return Response.json(result);
-    }
-
-    // 3. Geração da imagem
-    const imageResult = await imageEngine(result.state);
-
-    if (!imageResult.ok) {
+    /* =========================
+       1. LEITURA SEGURA DO BODY
+    ========================= */
+    let body;
+    try {
+      body = await req.json();
+    } catch {
       return Response.json({
-        resposta: imageResult.error,
-        state: result.state
+        resposta: 'Erro ao ler mensagem.',
+        state: initialState
       });
     }
 
+    const message = body?.message;
+    const state = body?.state || initialState;
+
+    if (!message) {
+      return Response.json({
+        resposta: 'Mensagem vazia.',
+        state
+      });
+    }
+
+    /* =========================
+       2. CHAT ENGINE
+    ========================= */
+    const chatResult = chatEngine(message, state);
+
+    /* =========================
+       3. SE NÃO É FINAL, RESPONDE
+    ========================= */
+    if (chatResult.state.etapa !== 'FINAL') {
+      return Response.json(chatResult);
+    }
+
+    /* =========================
+       4. GERA IMAGEM
+    ========================= */
+    const imageResult = await imageEngine(chatResult.state);
+
+    if (!imageResult.ok) {
+      return Response.json({
+        resposta: imageResult.error || 'Erro ao gerar imagem.',
+        state: chatResult.state
+      });
+    }
+
+    /* =========================
+       5. SUCESSO FINAL
+    ========================= */
     return Response.json({
       resposta: 'Flyer gerado com sucesso.',
-      imageUrl: imageResult.imageUrl,
-      state: result.state
+      imageUrl: imageResult.url || imageResult.imageUrl,
+      state: chatResult.state
     });
 
   } catch (error) {
-    console.error('[CHAT API ERROR]', error);
+    console.error('[CHAT ROUTE ERROR]', error);
 
     return Response.json({
       resposta: 'Erro inesperado. Vamos começar de novo.',
