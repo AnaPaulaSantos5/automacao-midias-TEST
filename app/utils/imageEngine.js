@@ -24,9 +24,10 @@ export async function imageEngine(state, provider = IMAGE_PROVIDERS.DALLE) {
      2. GERA PROMPT FINAL
   ========================= */
   let prompt;
+
   try {
     prompt = gerarPrompt(state);
-  } catch (err) {
+  } catch (error) {
     return {
       ok: false,
       provider: null,
@@ -56,11 +57,12 @@ export async function imageEngine(state, provider = IMAGE_PROVIDERS.DALLE) {
         };
     }
   } catch (error) {
-  console.error('[IMAGE ENGINE ERROR]', error);
+    console.error('[IMAGE ENGINE ERROR]', error);
 
-  return {
-    ok: false,
-    provider,
-    error: error.message || 'Falha na geração da imagem'
-  };
+    return {
+      ok: false,
+      provider,
+      error: error.message || 'Falha na geração da imagem'
+    };
+  }
 }
