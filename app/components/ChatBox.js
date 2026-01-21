@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { initialState } from '../data/state';
 
 export default function ChatBox() {
@@ -9,6 +9,34 @@ export default function ChatBox() {
   const [state, setState] = useState(initialState);
   const [loading, setLoading] = useState(false);
 
+  // 🔹 DISPARO INICIAL DO BOT
+  useEffect(() => {
+    async function iniciarChat() {
+      setLoading(true);
+
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: '',
+          state: initialState
+        })
+      });
+
+      const data = await res.json();
+
+      setState(data.state);
+
+      if (data.resposta) {
+        setMessages([{ role: 'bot', text: data.resposta }]);
+      }
+
+      setLoading(false);
+    }
+
+    iniciarChat();
+  }, []);
+
   async function sendMessage() {
     if (!input.trim() || loading) return;
 
@@ -16,10 +44,7 @@ export default function ChatBox() {
     setInput('');
     setLoading(true);
 
-    setMessages(prev => [
-      ...prev,
-      { role: 'user', text: userText }
-    ]);
+    setMessages(prev => [...prev, { role: 'user', text: userText }]);
 
     try {
       const res = await fetch('/api/chat', {
@@ -33,22 +58,18 @@ export default function ChatBox() {
 
       const data = await res.json();
 
+      console.log('API CHAT RESPONSE:', data);
+
       if (data.state) {
         setState(data.state);
       }
 
       if (data.resposta) {
-        setMessages(prev => [
-          ...prev,
-          { role: 'bot', text: data.resposta }
-        ]);
+        setMessages(prev => [...prev, { role: 'bot', text: data.resposta }]);
       }
 
       if (data.imageUrl) {
-        setMessages(prev => [
-          ...prev,
-          { role: 'bot', image: data.imageUrl }
-        ]);
+        setMessages(prev => [...prev, { role: 'bot', image: data.imageUrl }]);
       }
 
     } catch (err) {
@@ -66,9 +87,7 @@ export default function ChatBox() {
       <div style={{ minHeight: 300 }}>
         {messages.map((m, i) => (
           <div key={i} style={{ marginBottom: 10 }}>
-            {m.text && (
-              <p><strong>{m.role}:</strong> {m.text}</p>
-            )}
+            {m.text && <p><strong>{m.role}:</strong> {m.text}</p>}
             {m.image && (
               <img
                 src={m.image}
@@ -89,7 +108,7 @@ export default function ChatBox() {
       />
 
       <button onClick={sendMessage} disabled={loading}>
-        {loading ? 'Gerando...' : 'Enviar'}
+        {loading ? 'Processando...' : 'Enviar'}
       </button>
     </div>
   );
