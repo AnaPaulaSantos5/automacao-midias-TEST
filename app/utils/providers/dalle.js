@@ -1,18 +1,10 @@
 import OpenAI from 'openai';
 
-function getClient() {
-  const apiKey = process.env.OPENAI_API_KEY;
-
-  if (!apiKey) {
-    throw new Error('OPENAI_API_KEY não configurada');
-  }
-
-  return new OpenAI({ apiKey });
-}
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY
+});
 
 export async function gerarImagemDalle(prompt) {
-  const openai = getClient();
-
   const result = await openai.images.generate({
     model: 'gpt-image-1',
     prompt,
@@ -20,9 +12,6 @@ export async function gerarImagemDalle(prompt) {
   });
 
   return {
-    ok: true,
-    provider: 'DALLE',
-    imageUrl: result.data[0].url,
-    prompt
+    base64: result.data[0].b64_json
   };
 }
