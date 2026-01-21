@@ -27,7 +27,7 @@ export async function imageEngine(state, provider = IMAGE_PROVIDERS.DALLE) {
 
   try {
     prompt = gerarPrompt(state);
-  } catch (error) {
+  } catch {
     return {
       ok: false,
       provider: null,
@@ -36,18 +36,23 @@ export async function imageEngine(state, provider = IMAGE_PROVIDERS.DALLE) {
   }
 
   /* =========================
-     3. SWITCH DE PROVIDER
+     3. GERA IMAGEM
   ========================= */
   try {
+    let imageUrl;
+
     switch (provider) {
       case IMAGE_PROVIDERS.DALLE:
-        return await gerarImagemDalle(prompt);
+        imageUrl = await gerarImagemDalle(prompt);
+        break;
 
       case IMAGE_PROVIDERS.GEMINI:
-        return await gerarImagemGemini(prompt);
+        imageUrl = await gerarImagemGemini(prompt);
+        break;
 
       case IMAGE_PROVIDERS.NANO:
-        return await gerarImagemNano(prompt);
+        imageUrl = await gerarImagemNano(prompt);
+        break;
 
       default:
         return {
@@ -56,6 +61,21 @@ export async function imageEngine(state, provider = IMAGE_PROVIDERS.DALLE) {
           error: 'Provider de imagem não suportado'
         };
     }
+
+    if (!imageUrl) {
+      return {
+        ok: false,
+        provider,
+        error: 'Imagem não retornada pelo provider'
+      };
+    }
+
+    return {
+      ok: true,
+      provider,
+      imageUrl
+    };
+
   } catch (error) {
     console.error('[IMAGE ENGINE ERROR]', error);
 
