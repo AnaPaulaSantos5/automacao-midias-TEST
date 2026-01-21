@@ -22,5 +22,3 @@ export const initialState = {
   aceitaTabela: false,
   aceitaCampanha: false
 };
-
-  
