@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { initialState } from '../../data/state';
-import { gerarFlyerSeguroResidencial } from '../utils/imageEngine';
+import { gerarFlyerSeguroResidencial } from '../../utils/imageEngine';
 
 export async function POST(req) {
   try {
