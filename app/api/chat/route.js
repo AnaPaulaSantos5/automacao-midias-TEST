@@ -1,51 +1,44 @@
-import { chatEngine } from '../../utils/chatEngine';
-import { imageEngine } from '../../utils/imageEngine';
-import { IMAGE_PROVIDERS } from '../../utils/imageProviders';
-import { initialState } from '../../data/state';
+import { NextResponse } from 'next/server';
+import { initialState } from '@/app/data/state';
+import { gerarFlyerSeguroResidencial } from '@/app/lib/imageEngine';
 
 export async function POST(req) {
   try {
     const body = await req.json();
+    const { message, state = initialState } = body;
 
-    const message = body.message ?? '';
-    const state = body.state ?? initialState;
+    // FLUXO FINAL
+    if (state.etapa === 'FINAL') {
+      // 🔴 GERA A IMAGEM DE VERDADE
+      const imageResult = await gerarFlyerSeguroResidencial(state);
 
-    // 1. Processa conversa
-    const result = chatEngine(message, state);
-
-    // 2. Se chegou no FINAL, gera imagem
-    if (result.state?.etapa === 'FINAL') {
-      const imageResult = await imageEngine(
-        result.state,
-        IMAGE_PROVIDERS.DALLE
-      );
-
-      if (!imageResult.ok) {
-        return Response.json({
-          resposta: imageResult.error,
-          state: result.state
+      if (!imageResult || !imageResult.imageUrl) {
+        return NextResponse.json({
+          resposta: 'Erro ao gerar o flyer.',
+          state
         });
       }
 
-      return Response.json({
+      return NextResponse.json({
         resposta: 'Flyer gerado com sucesso.',
         imageUrl: imageResult.imageUrl,
-        state: result.state
+        state
       });
     }
 
-    // 3. Fluxo normal (continua conversa)
-    return Response.json({
-      resposta: result.resposta,
-      state: result.state
+    // Fluxo normal (simplificado)
+    return NextResponse.json({
+      resposta: 'Fluxo em andamento...',
+      state
     });
 
   } catch (error) {
-    console.error('Erro na API /chat:', error);
+    console.error('Erro no chat:', error);
 
-    return Response.json({
-      resposta: 'Erro inesperado. Vamos começar de novo.',
-      state: initialState
-    });
+    return NextResponse.json(
+      { resposta: 'Erro interno no servidor.' },
+      { status: 500 }
+    );
   }
 }
+
