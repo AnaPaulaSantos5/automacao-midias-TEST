@@ -1,115 +1,72 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { initialState } from '../data/state';
+import { useState } from 'react';
 
 export default function ChatBox() {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
-  const [state, setState] = useState(initialState);
-  const [loading, setLoading] = useState(false);
-
-  // 🔹 DISPARO INICIAL DO BOT
-  useEffect(() => {
-    async function iniciarChat() {
-      setLoading(true);
-
-      const res = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          message: '',
-          state: initialState
-        })
-      });
-
-      const data = await res.json();
-
-      setState(data.state);
-
-      if (data.resposta) {
-        setMessages([{ role: 'bot', text: data.resposta }]);
-      }
-
-      setLoading(false);
-    }
-
-    iniciarChat();
-  }, []);
+  const [state, setState] = useState(null);
 
   async function sendMessage() {
-    if (!input.trim() || loading) return;
+    if (!input.trim()) return;
 
-    const userText = input;
+    const userMessage = { role: 'user', text: input };
+    setMessages(prev => [...prev, userMessage]);
     setInput('');
-    setLoading(true);
 
-    setMessages(prev => [...prev, { role: 'user', text: userText }]);
+    const res = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        message: input,
+        state
+      })
+    });
 
-    try {
-      const res = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          message: userText,
-          state
-        })
-      });
+    const data = await res.json();
 
-      const data = await res.json();
+    const botMessage = {
+      role: 'bot',
+      text: data.resposta,
+      imageUrl: data.imageUrl || null
+    };
 
-      console.log('API CHAT RESPONSE:', data);
-
-      if (data.state) {
-        setState(data.state);
-      }
-
-      if (data.resposta) {
-        setMessages(prev => [...prev, { role: 'bot', text: data.resposta }]);
-      }
-
-      if (data.imageUrl) {
-        setMessages(prev => [...prev, { role: 'bot', image: data.imageUrl }]);
-      }
-
-    } catch (err) {
-      setMessages(prev => [
-        ...prev,
-        { role: 'bot', text: 'Erro ao comunicar com o servidor.' }
-      ]);
-    } finally {
-      setLoading(false);
-    }
+    setMessages(prev => [...prev, botMessage]);
+    setState(data.state);
   }
 
   return (
-    <div style={{ maxWidth: 500 }}>
-      <div style={{ minHeight: 300 }}>
-        {messages.map((m, i) => (
-          <div key={i} style={{ marginBottom: 10 }}>
-            {m.text && <p><strong>{m.role}:</strong> {m.text}</p>}
-            {m.image && (
+    <div style={{ maxWidth: 600, margin: '0 auto' }}>
+      <div>
+        {messages.map((msg, index) => (
+          <div key={index} style={{ marginBottom: 16 }}>
+            <strong>{msg.role === 'user' ? 'Você' : 'Bot'}:</strong>
+            <div>{msg.text}</div>
+
+            {msg.imageUrl && (
               <img
-                src={m.image}
+                src={msg.imageUrl}
                 alt="Flyer gerado"
-                style={{ width: '100%', borderRadius: 8 }}
+                style={{
+                  marginTop: 8,
+                  width: '100%',
+                  borderRadius: 8
+                }}
               />
             )}
           </div>
         ))}
       </div>
 
-      <input
-        value={input}
-        onChange={e => setInput(e.target.value)}
-        onKeyDown={e => e.key === 'Enter' && sendMessage()}
-        placeholder="Digite sua mensagem"
-        disabled={loading}
-      />
-
-      <button onClick={sendMessage} disabled={loading}>
-        {loading ? 'Processando...' : 'Enviar'}
-      </button>
+      <div style={{ display: 'flex', gap: 8 }}>
+        <input
+          value={input}
+          onChange={e => setInput(e.target.value)}
+          placeholder="Digite sua mensagem"
+          style={{ flex: 1 }}
+        />
+        <button onClick={sendMessage}>Enviar</button>
+      </div>
     </div>
   );
 }
