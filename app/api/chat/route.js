@@ -3,18 +3,12 @@ import { imageEngine } from '../../utils/imageEngine';
 import { IMAGE_PROVIDERS } from '../../utils/imageProviders';
 import { initialState } from '../../data/state';
 
-export async function POST(req) {
-  try {
-    const { message, state } = await req.json();
-
-    const result = chatEngine(message, state);
-
-    if (!result || !result.state || !result.resposta) {
-      return Response.json({
-        resposta: 'Erro interno. Reiniciando conversa.',
-        state: initialState
-      });
-    }
+export async function POST() {
+  return Response.json({
+    hasKey: !!process.env.OPENAI_API_KEY,
+    keyLength: process.env.OPENAI_API_KEY?.length || 0
+  });
+}
 
     /* =========================
        ETAPA FINAL → GERAR IMAGEM
