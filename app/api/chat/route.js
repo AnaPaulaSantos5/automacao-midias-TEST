@@ -1,7 +1,6 @@
-import { chatEngine } from '@/app/utils/chatEngine';
-import { imageEngine } from '@/app/utils/imageEngine';
-import { initialState } from '@/app/data/state';
-
+import { chatEngine } from '../../utils/chatEngine';
+import { imageEngine } from '../../utils/imageEngine';
+import { initialState } from '../../data/state';
 export async function POST(req) {
   try {
     const body = await req.json();
