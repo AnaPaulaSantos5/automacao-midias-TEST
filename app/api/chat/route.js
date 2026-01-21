@@ -1,5 +1,5 @@
-import { chatEngine } from '../chatEngine';
-import { initialState } from '../app/data/state';
+import { chatEngine } from '@/app/utils/chatEngine';
+import { initialState } from '@/app/data/state';
 
 export async function POST(req) {
   try {
