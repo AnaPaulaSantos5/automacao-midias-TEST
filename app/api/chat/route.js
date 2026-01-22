@@ -1,50 +1,34 @@
-import { chatEngine } from '../../utils/chatEngine';
-import { imageEngine } from '../../utils/imageEngine';
-import { initialState } from '../../data/state';
-
 export async function POST(req) {
   try {
+    console.log('>>> API CHAT CHAMADA');
+
     const body = await req.json();
-    const message = body?.message;
+    console.log('BODY:', body);
+
     const state =
-  body?.state && body.state.etapa
-    ? body.state
-    : initialState;
+      body?.state && body.state.etapa
+        ? body.state
+        : initialState;
 
-    if (!message) {
-      return Response.json({
-        resposta: 'Mensagem vazia.',
-        state
-      });
-    }
+    console.log('STATE FINAL:', state);
 
-    // 1. Chat flow
-    const chatResult = chatEngine(message, state);
+    const chatResult = chatEngine(body.message, state);
+    console.log('CHAT RESULT:', chatResult);
 
-    // 2. Ainda conversando
     if (chatResult.state.etapa !== 'FINAL') {
       return Response.json(chatResult);
     }
 
-    // 3. Geração da imagem
     const imageResult = await imageEngine(chatResult.state);
 
-    if (!imageResult.ok) {
-      return Response.json({
-        resposta: imageResult.error || 'Erro ao gerar imagem.',
-        state: chatResult.state
-      });
-    }
-
-    // 4. Sucesso
     return Response.json({
       resposta: 'Flyer gerado com sucesso.',
-      imageBase64: imageResult.imageBase64, // BASE64 PURO
+      imageBase64: imageResult.imageBase64,
       state: chatResult.state
     });
 
   } catch (error) {
-    console.error('[CHAT ROUTE ERROR]', error);
+    console.error('🔥 ERRO REAL:', error);
 
     return Response.json({
       resposta: 'Erro inesperado.',
