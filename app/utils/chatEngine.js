@@ -1,4 +1,5 @@
 import { initialState } from '../data/state';
+import { gerarCopySeguroResidencial } from './copy/seguroResidencial';
 
 function garantirState(state) {
   return {
@@ -66,17 +67,19 @@ export function chatEngine(message, state = initialState) {
   };
 
     case 'CONFIRMACAO':
-      if (texto.includes('sim')) {
-        novoState.etapa = 'FINAL';
-        return {
-          resposta: 'Flyer confirmado. Iniciando geração.',
-          state: garantirState(novoState)
-        };
-      }
-      return {
-        resposta: 'Posso gerar o flyer agora?',
-        state: garantirState(novoState)
-      };
+  if (texto.includes('sim')) {
+    novoState.etapa = 'FINAL';
+
+    if (novoState.area === 'confi-seguros' && novoState.subproduto === 'residencial') {
+      const copy = gerarCopySeguroResidencial();
+      novoState.textoPrincipal = copy.textoPrincipal;
+      novoState.textoComplementar = copy.textoComplementar;
+    }
+
+    return {
+      resposta: 'Flyer confirmado. Iniciando geração.',
+      state: garantirState(novoState)
+    };
 
     default:
       return {
