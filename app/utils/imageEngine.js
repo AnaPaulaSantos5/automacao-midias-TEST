@@ -6,66 +6,61 @@ import { gerarImagemDalle } from './providers/dalle';
 import { gerarImagemGemini } from './providers/gemini';
 import { gerarImagemNano } from './providers/nano';
 
+/**
+ * Gera imagem em base64 a partir do estado.
+ * Converte URL para base64 se necessário.
+ */
 export async function imageEngine(state, provider = IMAGE_PROVIDERS.DALLE) {
+  // 1️⃣ Validação do state
   const validation = validarState(state);
-
   if (!validation.ok) {
-    return {
-      ok: false,
-      error: validation.errors.join(' | ')
-    };
+    return { ok: false, error: validation.errors.join(' | ') };
   }
 
+  // 2️⃣ Gerar prompt
   let prompt;
   try {
     prompt = gerarPrompt(state);
   } catch {
-    return {
-      ok: false,
-      error: 'Erro ao gerar prompt'
-    };
+    return { ok: false, error: 'Erro ao gerar prompt' };
   }
 
+  // 3️⃣ Gerar imagem
   try {
-    let imageBase64;
+    let image = null;
 
     switch (provider) {
       case IMAGE_PROVIDERS.DALLE:
-        imageBase64 = await gerarImagemDalle(prompt);
+        image = await gerarImagemDalle(prompt);
         break;
 
       case IMAGE_PROVIDERS.GEMINI:
-        imageBase64 = await gerarImagemGemini(prompt);
+        image = await gerarImagemGemini(prompt);
         break;
 
       case IMAGE_PROVIDERS.NANO:
-        imageBase64 = await gerarImagemNano(prompt);
+        image = await gerarImagemNano(prompt);
         break;
 
       default:
-        return {
-          ok: false,
-          error: 'Provider não suportado'
-        };
+        return { ok: false, error: 'Provider não suportado' };
     }
 
-    if (!imageBase64) {
-      return {
-        ok: false,
-        error: 'Imagem não retornada pelo provider'
-      };
+    if (!image) {
+      return { ok: false, error: 'Imagem não retornada pelo provider' };
     }
 
-    return {
-      ok: true,
-      imageBase64 // retorna base64 puro para preview
-    };
+    // 4️⃣ Se for URL, converte para base64
+    let imageBase64 = image;
+    if (image.startsWith('http')) {
+      const res = await fetch(image);
+      const buffer = await res.arrayBuffer();
+      imageBase64 = Buffer.from(buffer).toString('base64');
+    }
 
+    return { ok: true, imageBase64 };
   } catch (error) {
     console.error('[IMAGE ENGINE ERROR]', error);
-    return {
-      ok: false,
-      error: error.message || 'Falha na geração da imagem'
-    };
+    return { ok: false, error: error.message || 'Falha na geração da imagem' };
   }
 }
