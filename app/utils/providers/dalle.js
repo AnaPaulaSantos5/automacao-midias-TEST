@@ -11,6 +11,6 @@ export async function gerarImagemDalle(prompt) {
     size: '1024x1024'
   });
 
-  // 🔴 RETORNO DEVE SER STRING BASE64 PURA
+  // 🔥 RETORNO CORRETO: STRING BASE64 PURA
   return result.data[0].b64_json;
 }
