@@ -1,82 +1,75 @@
-import { initialState } from '../data/state';
+import { validarState } from './stateValidator';
+import { gerarPrompt } from './gerarPrompt';
+import { IMAGE_PROVIDERS } from './imageProviders';
 
-function garantirState(state) {
-  return {
-    ...initialState,
-    ...state,
-    tabela: state.tabela || { colunas: [], linhas: [] }
-  };
-}
+import { gerarImagemDalle } from './providers/dalle';
+import { gerarImagemGemini } from './providers/gemini';
+import { gerarImagemNano } from './providers/nano';
 
-export function chatEngine(message, state = initialState) {
-  const texto = message.toLowerCase().trim();
-  let novoState = { ...state };
+export async function imageEngine(
+  state,
+  provider = IMAGE_PROVIDERS.DALLE
+) {
+  const validation = validarState(state);
 
-  switch (state.etapa) {
-    case 'START':
-      novoState.etapa = 'AREA';
-      return {
-        resposta: 'Olá! Qual área deseja? Seguros, Finanças ou Benefícios?',
-        state: garantirState(novoState)
-      };
+  if (!validation.ok) {
+    return {
+      ok: false,
+      error: validation.errors.join(' | ')
+    };
+  }
 
-    case 'AREA':
-      if (texto.includes('seguro')) {
-        novoState.area = 'confi-seguros';
-        novoState.etapa = 'TIPO_SEGURO';
+  let prompt;
+  try {
+    prompt = gerarPrompt(state);
+  } catch {
+    return {
+      ok: false,
+      error: 'Erro ao gerar prompt'
+    };
+  }
+
+  try {
+    let imageBase64;
+
+    switch (provider) {
+      case IMAGE_PROVIDERS.DALLE:
+        imageBase64 = await gerarImagemDalle(prompt);
+        break;
+
+      case IMAGE_PROVIDERS.GEMINI:
+        imageBase64 = await gerarImagemGemini(prompt);
+        break;
+
+      case IMAGE_PROVIDERS.NANO:
+        imageBase64 = await gerarImagemNano(prompt);
+        break;
+
+      default:
         return {
-          resposta: 'Perfeito. Qual tipo de seguro? Geral ou Residencial?',
-          state: garantirState(novoState)
+          ok: false,
+          error: 'Provider não suportado'
         };
-      }
-      return {
-        resposta: 'Por favor, informe: Seguros, Finanças ou Benefícios.',
-        state: garantirState(novoState)
-      };
+    }
 
-    case 'TIPO_SEGURO':
-      if (texto.includes('residencial')) {
-        novoState.produto = 'seguro_residencial';
-        novoState.subproduto = 'residencial';
-        novoState.etapa = 'CONFIRMACAO';
-        return {
-          resposta:
-            'Perfeito. Vou preparar o flyer conforme o padrão da Confi Seguros. Posso gerar agora?',
-          state: garantirState(novoState)
-        };
-      }
-      if (texto.includes('geral')) {
-        novoState.produto = 'seguro_geral';
-        novoState.subproduto = 'geral';
-        novoState.etapa = 'CONFIRMACAO';
-        return {
-          resposta:
-            'Perfeito. Vou preparar o flyer conforme o padrão da Confi Seguros. Posso gerar agora?',
-          state: garantirState(novoState)
-        };
-      }
+    if (!imageBase64) {
       return {
-        resposta: 'Informe se o seguro é Geral ou Residencial.',
-        state: garantirState(novoState)
+        ok: false,
+        error: 'Imagem não retornada pelo provider'
       };
+    }
 
-    case 'CONFIRMACAO':
-      if (texto.includes('sim') || texto.includes('pode')) {
-        novoState.etapa = 'FINAL';
-        return {
-          resposta: 'Flyer confirmado. Iniciando geração.',
-          state: garantirState(novoState)
-        };
-      }
-      return {
-        resposta: 'Posso gerar o flyer agora?',
-        state: garantirState(novoState)
-      };
+    return {
+      ok: true,
+      imageBase64 // BASE64 PURO
+    };
 
-    default:
-      return {
-        resposta: 'Vamos começar novamente.',
-        state: garantirState(initialState)
-      };
+  } catch (error) {
+    console.error('[IMAGE ENGINE ERROR]', error);
+
+    return {
+      ok: false,
+      error: error.message || 'Falha na geração da imagem'
+    };
   }
 }
