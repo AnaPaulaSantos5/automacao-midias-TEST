@@ -3,8 +3,7 @@ import { initialState } from '../data/state';
 function garantirState(state) {
   return {
     ...initialState,
-    ...state,
-    tabela: state.tabela || { colunas: [], linhas: [] }
+    ...state
   };
 }
 
@@ -29,15 +28,6 @@ export function chatEngine(message, state = initialState) {
           state: garantirState(novoState)
         };
       }
-      if (texto.includes('finança') || texto.includes('benefício')) {
-        // se quiser tratar outras áreas futuramente
-        novoState.area = texto.includes('finança') ? 'confi-financas' : 'confi-beneficios';
-        novoState.etapa = 'CONFIRMACAO';
-        return {
-          resposta: `Você escolheu ${novoState.area}. Posso gerar agora?`,
-          state: garantirState(novoState)
-        };
-      }
       return {
         resposta: 'Por favor, informe: Seguros, Finanças ou Benefícios.',
         state: garantirState(novoState)
@@ -46,19 +36,10 @@ export function chatEngine(message, state = initialState) {
     case 'TIPO_SEGURO':
       if (texto.includes('residencial')) {
         novoState.produto = 'seguro_residencial';
-        novoState.subproduto = 'residencial';
         novoState.etapa = 'CONFIRMACAO';
         return {
-          resposta: 'Perfeito. Vou preparar o flyer conforme o padrão da Confi Seguros. Posso gerar agora?',
-          state: garantirState(novoState)
-        };
-      }
-      if (texto.includes('geral')) {
-        novoState.produto = 'seguro_geral';
-        novoState.subproduto = 'geral';
-        novoState.etapa = 'CONFIRMACAO';
-        return {
-          resposta: 'Perfeito. Vou preparar o flyer conforme o padrão da Confi Seguros. Posso gerar agora?',
+          resposta:
+            'Perfeito. Vou preparar o flyer conforme o padrão da Confi Seguros. Posso gerar agora?',
           state: garantirState(novoState)
         };
       }
@@ -68,7 +49,7 @@ export function chatEngine(message, state = initialState) {
       };
 
     case 'CONFIRMACAO':
-      if (texto.includes('sim') || texto.includes('pode') || texto.includes('ok')) {
+      if (texto.includes('sim')) {
         novoState.etapa = 'FINAL';
         return {
           resposta: 'Flyer confirmado. Iniciando geração.',
@@ -77,12 +58,6 @@ export function chatEngine(message, state = initialState) {
       }
       return {
         resposta: 'Posso gerar o flyer agora?',
-        state: garantirState(novoState)
-      };
-
-    case 'FINAL':
-      return {
-        resposta: 'Flyer já está em processamento.',
         state: garantirState(novoState)
       };
 
