@@ -80,6 +80,7 @@ export function chatEngine(message, state = initialState) {
       resposta: 'Flyer confirmado. Iniciando geração.',
       state: garantirState(novoState)
     };
+    }
 
     default:
       return {
