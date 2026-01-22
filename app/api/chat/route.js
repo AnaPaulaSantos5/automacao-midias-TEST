@@ -5,28 +5,30 @@ import { initialState } from '../../data/state';
 export async function POST(req) {
   try {
     const body = await req.json();
-    const message = body.message;
-    const state = body.state && body.state.etapa ? body.state : initialState;
 
-    // 1️⃣ Processa mensagem do chat
+    const message = body.message;
+    const state =
+      body.state && body.state.etapa
+        ? body.state
+        : initialState;
+
     const chatResult = chatEngine(message, state);
 
-    // 2️⃣ Se não final, retorna apenas a mensagem
+    // 🔹 fluxo normal do chat
     if (chatResult.state.etapa !== 'FINAL') {
       return Response.json(chatResult);
     }
 
-    // 3️⃣ Gera imagem
+    // 🔹 geração de imagem
     const imageResult = await imageEngine(chatResult.state);
 
     if (!imageResult.ok) {
       return Response.json({
-        resposta: imageResult.error || 'Erro ao gerar imagem.',
+        resposta: imageResult.error,
         state: chatResult.state
       });
     }
 
-    // 4️⃣ Retorna mensagem + imagem base64
     return Response.json({
       resposta: 'Flyer gerado com sucesso.',
       imageBase64: imageResult.imageBase64,
@@ -35,6 +37,7 @@ export async function POST(req) {
 
   } catch (error) {
     console.error('🔥 ERRO REAL:', error);
+
     return Response.json({
       resposta: 'Erro inesperado.',
       state: initialState
