@@ -6,7 +6,10 @@ export async function POST(req) {
   try {
     const body = await req.json();
     const message = body?.message;
-    const state = body?.state || initialState;
+    const state =
+  body?.state && body.state.etapa
+    ? body.state
+    : initialState;
 
     if (!message) {
       return Response.json({
