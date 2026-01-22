@@ -64,3 +64,4 @@ try {
   console.error('[IMAGE ENGINE ERROR]', error);
   return { ok: false, error: error.message || 'Falha na geração da imagem' };
 }
+}
