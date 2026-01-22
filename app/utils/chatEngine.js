@@ -20,19 +20,44 @@ export function chatEngine(message, state = initialState) {
         state: garantirState(novoState)
       };
 
-    case 'AREA':
-      if (texto.includes('seguro')) {
-        novoState.area = 'confi-seguros';
-        novoState.etapa = 'TIPO_SEGURO';
-        return {
-          resposta: 'Perfeito. Qual tipo de seguro? Geral ou Residencial?',
-          state: garantirState(novoState)
-        };
-      }
-      return {
-        resposta: 'Por favor, informe: Seguros, Finanças ou Benefícios.',
-        state: garantirState(novoState)
-      };
+    case 'AREA': {
+  if (texto.includes('seguro')) {
+    novoState.area = 'confi-seguros';
+    novoState.etapa = 'TIPO_SEGURO';
+
+    return {
+      resposta: 'Perfeito. Qual tipo de seguro? Geral ou Residencial?',
+      state: garantirState(novoState)
+    };
+  }
+
+  if (texto.includes('finan')) {
+    novoState.area = 'confi-financas';
+    novoState.produto = 'financas';
+    novoState.etapa = 'FINANCAS_TIPO';
+
+    return {
+      resposta: 'Perfeito. Qual produto? Consórcio, Crédito ou Planejamento?',
+      state: garantirState(novoState)
+    };
+  }
+
+  if (texto.includes('benef')) {
+    novoState.area = 'confi-beneficios';
+    novoState.produto = 'beneficios';
+    novoState.etapa = 'BENEFICIOS_TIPO';
+
+    return {
+      resposta: 'Perfeito. Qual benefício? Saúde, Odonto ou Pet?',
+      state: garantirState(novoState)
+    };
+  }
+
+  return {
+    resposta: 'Por favor, informe: Seguros, Finanças ou Benefícios.',
+    state: garantirState(novoState)
+  };
+}
 
     case 'TIPO_SEGURO':
   if (texto.includes('residencial')) {
