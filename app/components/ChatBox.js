@@ -7,14 +7,19 @@ export default function ChatBox() {
   const [input, setInput] = useState('');
   const [state, setState] = useState(null);
 
-  // 🔹 preview separado
+  // Preview separado
   const [previewImage, setPreviewImage] = useState(null);
 
   async function sendMessage() {
     if (!input.trim()) return;
 
-    const userMessage = { role: 'user', text: input };
-    setMessages(prev => [...prev, userMessage]);
+    const userText = input;
+
+    setMessages(prev => [
+      ...prev,
+      { role: 'user', text: userText }
+    ]);
+
     setInput('');
 
     let data;
@@ -24,13 +29,13 @@ export default function ChatBox() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          message: input,
+          message: userText,
           state
         })
       });
 
       data = await res.json();
-    } catch (error) {
+    } catch {
       setMessages(prev => [
         ...prev,
         { role: 'bot', text: 'Erro de conexão com o servidor.' }
@@ -38,17 +43,21 @@ export default function ChatBox() {
       return;
     }
 
-    const botMessage = {
-      role: 'bot',
-      text: data.resposta
-    };
+    setMessages(prev => [
+      ...prev,
+      { role: 'bot', text: data.resposta }
+    ]);
 
-    setMessages(prev => [...prev, botMessage]);
     setState(data.state || null);
 
-    // 🔹 se vier imagem, seta preview
+    // 🔹 PREVIEW
     if (data.imageBase64) {
-      setPreviewImage(data.imageBase64);
+      const image =
+        data.imageBase64.startsWith('data:image')
+          ? data.imageBase64
+          : `data:image/png;base64,${data.imageBase64}`;
+
+      setPreviewImage(image);
     }
   }
 
@@ -63,7 +72,7 @@ export default function ChatBox() {
         padding: 24
       }}
     >
-      {/* ================= CHAT ================= */}
+      {/* CHAT */}
       <div>
         <h2>Assistente Confi</h2>
 
@@ -96,7 +105,7 @@ export default function ChatBox() {
         </div>
       </div>
 
-      {/* ================= PREVIEW ================= */}
+      {/* PREVIEW */}
       <div>
         <h2>Preview do Flyer</h2>
 
@@ -119,7 +128,7 @@ export default function ChatBox() {
         {previewImage && (
           <div>
             <img
-              src={`data:image/png;base64,${previewImage}`}
+              src={previewImage}
               alt="Flyer gerado"
               style={{
                 width: '100%',
@@ -128,10 +137,7 @@ export default function ChatBox() {
               }}
             />
 
-            <a
-              href={`data:image/png;base64,${previewImage}`}
-              download="flyer-confi.png"
-            >
+            <a href={previewImage} download="flyer-confi.png">
               <button style={{ width: '100%' }}>
                 Baixar imagem
               </button>
