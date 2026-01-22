@@ -1,3 +1,8 @@
+import { validarState } from './stateValidator';
+import { gerarPrompt } from './gerarPrompt';
+import { IMAGE_PROVIDERS } from './imageProviders';
+
+import { gerarImagemDalle } from './providers/dalle';
 
 export async function imageEngine(state, provider = IMAGE_PROVIDERS.DALLE) {
   const validation = validarState(state);
@@ -9,54 +14,23 @@ export async function imageEngine(state, provider = IMAGE_PROVIDERS.DALLE) {
   let prompt;
   try {
     prompt = gerarPrompt(state);
-  } catch {
+  } catch (e) {
     return { ok: false, error: 'Erro ao gerar prompt' };
   }
 
   try {
-    let result;
+    const imageBase64 = await gerarImagemDalle(prompt);
 
-    switch (provider) {
-      case IMAGE_PROVIDERS.DALLE:
-        result = await gerarImagemDalle(prompt);
-        break;
-      case IMAGE_PROVIDERS.GEMINI:
-        result = await gerarImagemGemini(prompt);
-        break;
-      case IMAGE_PROVIDERS.NANO:
-        result = await gerarImagemNano(prompt);
-        break;
-      default:
-        return { ok: false, error: 'Provider não suportado' };
-    }
-
-    if (!result) {
-      return { ok: false, error: 'Imagem não retornada pelo provider' };
-    }
-
-    // 🔥 NORMALIZAÇÃO CRÍTICA
-    let imageBase64;
-
-    if (typeof result === 'string') {
-      imageBase64 = result;
-    } else if (result.imageBase64) {
-      imageBase64 = result.imageBase64;
-    } else if (result.data) {
-      imageBase64 = result.data;
-    } else if (result.b64_json) {
-      imageBase64 = result.b64_json;
-    } else {
-      console.error('Formato inválido:', result);
-      return { ok: false, error: 'Formato de imagem inválido' };
+    if (!imageBase64 || typeof imageBase64 !== 'string') {
+      return { ok: false, error: 'Imagem inválida retornada' };
     }
 
     return {
       ok: true,
       imageBase64
     };
-
   } catch (error) {
     console.error('[IMAGE ENGINE ERROR]', error);
-    return { ok: false, error: error.message };
+    return { ok: false, error: 'Falha ao gerar imagem' };
   }
 }
