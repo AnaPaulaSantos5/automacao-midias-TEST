@@ -1,6 +1,7 @@
 import { chatEngine } from '../../utils/chatEngine';
 import { imageEngine } from '../../utils/imageEngine';
 import { initialState } from '../../data/state';
+import { normalizarStateFinal } from '../../utils/normalizarStateFinal';
 
 export async function POST(req) {
   try {
