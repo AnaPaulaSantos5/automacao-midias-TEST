@@ -1,6 +1,6 @@
 import { initialState } from '../data/state';
-import { normalizarSubtipoConsorcio } from '../../utils/normalizador';
-import { gerarCopySeguroResidencial } from '../../copy/seguroResidencial';
+import { normalizarSubtipoConsorcio } from '../utils/normalizador';
+import { gerarCopySeguroResidencial } from '../copy/seguroResidencial';
 
 function garantirState(state) {
   return {
