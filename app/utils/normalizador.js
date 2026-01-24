@@ -35,7 +35,7 @@ export function normalizarSubtipoConsorcio(texto) {
     t.includes('veículo') ||
     t.includes('veiculo')
   ) {
-    return 'auto';
+    return 'automovel';
   }
 
   if (
