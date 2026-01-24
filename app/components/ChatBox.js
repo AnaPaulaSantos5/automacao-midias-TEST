@@ -7,66 +7,121 @@ export default function ChatBox() {
   const [input, setInput] = useState('');
   const [state, setState] = useState(null);
   const [previewImage, setPreviewImage] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   async function sendMessage() {
-    if (!input.trim()) return;
+    if (!input.trim() || loading) return;
 
-    setMessages(prev => [...prev, { role: 'user', text: input }]);
+    const userText = input;
+
+    setMessages((prev) => [
+      ...prev,
+      { role: 'user', text: userText }
+    ]);
+
     setInput('');
+    setLoading(true);
+
+    let data = null;
 
     try {
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: input, state })
+        body: JSON.stringify({
+          message: userText,
+          state: state ?? null
+        })
       });
 
-      const data = await res.json();
+      if (!res.ok) {
+        throw new Error('Erro HTTP');
+      }
 
-      setMessages(prev => [
-        ...prev,
-        { role: 'bot', text: data.resposta }
-      ]);
-
-      setState(data.state || null);
-      setPreviewImage(typeof data.imageBase64 === 'string' ? data.imageBase64 : null);
-
-    } catch {
-      setMessages(prev => [
+      data = await res.json();
+    } catch (err) {
+      setMessages((prev) => [
         ...prev,
         { role: 'bot', text: 'Erro de conexão com o servidor.' }
       ]);
+      setLoading(false);
+      return;
     }
+
+    // 🔒 Blindagem total da resposta
+    const resposta =
+      typeof data?.resposta === 'string'
+        ? data.resposta
+        : 'Ocorreu um erro ao processar a resposta.';
+
+    setMessages((prev) => [
+      ...prev,
+      { role: 'bot', text: resposta }
+    ]);
+
+    // 🔒 Blindagem do state
+    if (data?.state && typeof data.state === 'object') {
+      setState(data.state);
+    }
+
+    // 🔒 Blindagem do preview
+    if (
+      typeof data?.imageBase64 === 'string' &&
+      data.imageBase64.startsWith('iVBOR') // PNG base64
+    ) {
+      setPreviewImage(data.imageBase64);
+    }
+
+    setLoading(false);
   }
 
-  const tabela = state?.tabela;
-  const campanha = state?.campanha;
-
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 32, maxWidth: 1100, margin: '0 auto', padding: 24 }}>
-
+    <div
+      style={{
+        display: 'grid',
+        gridTemplateColumns: '1fr 1fr',
+        gap: 32,
+        maxWidth: 1100,
+        margin: '0 auto',
+        padding: 24
+      }}
+    >
       {/* CHAT */}
       <div>
         <h2>Assistente Confi</h2>
 
-        <div style={{ border: '1px solid #ddd', borderRadius: 8, padding: 16, minHeight: 300 }}>
-          {messages.map((m, i) => (
+        <div
+          style={{
+            border: '1px solid #ddd',
+            borderRadius: 8,
+            padding: 16,
+            minHeight: 300,
+            marginBottom: 16
+          }}
+        >
+          {messages.map((msg, i) => (
             <div key={i} style={{ marginBottom: 12 }}>
-              <strong>{m.role === 'user' ? 'Você' : 'Bot'}:</strong>
-              <div>{m.text}</div>
+              <strong>{msg.role === 'user' ? 'Você' : 'Bot'}:</strong>
+              <div>{String(msg.text)}</div>
             </div>
           ))}
+
+          {loading && (
+            <div style={{ color: '#888' }}>Processando...</div>
+          )}
         </div>
 
-        <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
+        <div style={{ display: 'flex', gap: 8 }}>
           <input
             value={input}
-            onChange={e => setInput(e.target.value)}
+            onChange={(e) => setInput(e.target.value)}
             placeholder="Digite sua mensagem"
             style={{ flex: 1, padding: 8 }}
-            onKeyDown={e => e.key === 'Enter' && sendMessage()}
+            onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
           />
-          <button onClick={sendMessage}>Enviar</button>
+          <button onClick={sendMessage} disabled={loading}>
+            Enviar
+          </button>
         </div>
       </div>
 
@@ -75,46 +130,42 @@ export default function ChatBox() {
         <h2>Preview do Flyer</h2>
 
         {!previewImage && (
-          <div style={{ border: '2px dashed #ccc', height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            Nenhum flyer gerado
+          <div
+            style={{
+              border: '2px dashed #ccc',
+              borderRadius: 8,
+              height: 300,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#777'
+            }}
+          >
+            Nenhum flyer gerado ainda
           </div>
         )}
 
         {previewImage && (
-          <>
+          <div>
             <img
               src={`data:image/png;base64,${previewImage}`}
-              alt="Flyer"
-              style={{ width: '100%', borderRadius: 8, marginBottom: 16 }}
+              alt="Flyer gerado"
+              style={{
+                width: '100%',
+                borderRadius: 8,
+                marginBottom: 12
+              }}
             />
 
-            {campanha?.titulo && <h3>{campanha.titulo}</h3>}
-
-            {tabela && (
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead>
-                  <tr>
-                    {tabela.colunas.map((c, i) => (
-                      <th key={i} style={{ borderBottom: '2px solid #1260c7', padding: 8 }}>
-                        {c}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {tabela.linhas.map((linha, i) => (
-                    <tr key={i}>
-                      {linha.map((cell, j) => (
-                        <td key={j} style={{ padding: 8, borderBottom: '1px solid #eee' }}>
-                          {cell}
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-          </>
+            <a
+              href={`data:image/png;base64,${previewImage}`}
+              download="flyer-confi.png"
+            >
+              <button style={{ width: '100%' }}>
+                Baixar imagem
+              </button>
+            </a>
+          </div>
         )}
       </div>
     </div>
