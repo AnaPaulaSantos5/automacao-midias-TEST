@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import FlyerConsorcioTabela from '@/components/flyers/FlyerConsorcioTabela';
 
 export default function ChatBox() {
   const [messages, setMessages] = useState([]);
@@ -34,9 +35,7 @@ export default function ChatBox() {
         })
       });
 
-      if (!res.ok) {
-        throw new Error('Erro HTTP');
-      }
+      if (!res.ok) throw new Error('Erro HTTP');
 
       data = await res.json();
     } catch (err) {
@@ -48,26 +47,27 @@ export default function ChatBox() {
       return;
     }
 
-    // 🔒 Blindagem total da resposta
-    const resposta =
-      typeof data?.resposta === 'string'
-        ? data.resposta
-        : 'Ocorreu um erro ao processar a resposta.';
-
+    // 🔒 Resposta textual
     setMessages((prev) => [
       ...prev,
-      { role: 'bot', text: resposta }
+      {
+        role: 'bot',
+        text:
+          typeof data?.resposta === 'string'
+            ? data.resposta
+            : 'Ocorreu um erro ao processar a resposta.'
+      }
     ]);
 
-    // 🔒 Blindagem do state
+    // 🔒 State confiável
     if (data?.state && typeof data.state === 'object') {
       setState(data.state);
     }
 
-    // 🔒 Blindagem do preview
+    // 🔒 Imagem base (apenas fundo)
     if (
       typeof data?.imageBase64 === 'string' &&
-      data.imageBase64.startsWith('iVBOR') // PNG base64
+      data.imageBase64.startsWith('iVBOR')
     ) {
       setPreviewImage(data.imageBase64);
     }
@@ -145,27 +145,18 @@ export default function ChatBox() {
           </div>
         )}
 
-        {previewImage && (
-          <div>
-            <img
-              src={`data:image/png;base64,${previewImage}`}
-              alt="Flyer gerado"
-              style={{
-                width: '100%',
-                borderRadius: 8,
-                marginBottom: 12
-              }}
-            />
-
-            <a
-              href={`data:image/png;base64,${previewImage}`}
-              download="flyer-confi.png"
-            >
-              <button style={{ width: '100%' }}>
-                Baixar imagem
-              </button>
-            </a>
-          </div>
+        {previewImage && state && (
+          <FlyerConsorcioTabela
+            data={{
+              imageBase64: previewImage,
+              subproduto: state.subproduto,
+              meses: state.meses,
+              campanha: state.campanha,
+              tabela: state.tabela,
+              lances: state.lances,
+              rodapeLegal: state.rodapeLegal
+            }}
+          />
         )}
       </div>
     </div>
