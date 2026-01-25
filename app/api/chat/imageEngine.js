@@ -1,7 +1,7 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import { createElement } from 'react';
-import FlyerConsorcioTabela from '../components/flyers/FlyerConsorcioTabela';
-import { gerarImagem } from './gerarImagem'; // Puppeteer
+import FlyerConsorcioTabela from '../../components/flyers/FlyerConsorcioTabela';
+import { gerarImagem } from './gerarImagem'; // Puppeteer, mesmo nível ou utils separado
 
 export async function imageEngine(state) {
   try {
@@ -18,7 +18,6 @@ export async function imageEngine(state) {
     const imageBase64 = await gerarImagem(html);
 
     return { ok: true, imageBase64 };
-
   } catch (error) {
     console.error('❌ Erro no imageEngine:', error);
     return { ok: false, error: 'Erro ao gerar imagem.' };
