@@ -1,136 +1,156 @@
 export function gerarPrompt(state) {
-  if (!state || state.area !== 'confi-financas') {
+  if (!state || !state.area) {
     throw new Error('State inválido');
   }
 
   const {
+    area,
+    produto,
     subproduto,
     meses,
-    campanha = {},
-    tabela = { colunas: [], linhas: [] },
+    campanha,
+    tabela,
     lances = [],
-    rodape = ''
+    rodape
   } = state;
 
-  const imagemBase =
-    subproduto === 'imovel'
-      ? 'Casa moderna de arquitetura contemporânea, fotografia realista'
-      : subproduto === 'automovel'
-      ? 'Carro atual em ambiente urbano realista'
-      : 'Caminhão moderno em estrada, fotografia profissional';
+  /* ======================================================
+     CONFI FINANÇAS — CONSÓRCIO COM TABELA
+  ====================================================== */
+  if (area === 'confi-financas' && produto === 'financas') {
+    const imagemBase =
+      subproduto === 'imovel'
+        ? 'Casa moderna contemporânea, fotografia realista, ângulo frontal, iluminação natural'
+        : subproduto === 'automovel'
+        ? 'Carro simples e atual em ambiente urbano, fotografia realista'
+        : 'Caminhão moderno em estrada, fotografia profissional';
 
-  return `
-Crie uma imagem vertical com layout rígido e controlado, seguindo exatamente as divisões abaixo.
+    return `
+Criar uma flyer vertical seguindo EXATAMENTE a estrutura abaixo.
+Não inventar layout diferente.
+Não mover elementos de faixa.
+Não omitir nenhuma faixa.
 
 ==================================================
-BLOCO 1 — IMAGEM SUPERIOR (APROX. 25% DA ALTURA TOTAL)
+FAIXA 1 — IMAGEM (APROX. 25% DA ALTURA TOTAL)
 ==================================================
 
-A imagem deve ocupar NO MÁXIMO 25% da altura total.
-Ela não pode avançar para o restante da composição.
+Imagem ocupa apenas a parte superior do flyer.
+Não ultrapassar esta faixa.
 
 Imagem:
 ${imagemBase}
 
-Sobre a imagem, aplicar DOIS RETÂNGULOS PRETOS SEMITRANSPARENTES:
-- Um retângulo no lado esquerdo da imagem
-- Um retângulo no lado direito da imagem
-Cor preta com transparência leve (20% a 30%).
-Os retângulos devem ficar SOBRE a imagem, como camadas.
+Sobre a imagem aplicar DOIS overlays pretos suaves,
+um à esquerda e um à direita,
+com opacidade entre 20% e 30%.
+Os overlays devem ser sutis, elegantes, sem parecer blocos sólidos.
 
-TEXTOS SOBRE A IMAGEM (OBRIGATÓRIOS):
+Dentro da imagem, próximo à base da faixa:
 
-Canto inferior esquerdo da imagem:
-Texto pequeno, branco, alinhado à esquerda:
-"${subproduto.toUpperCase()} • ${meses} MESES"
+LADO ESQUERDO:
+Texto:
+"${subproduto === 'imovel' ? 'Imóvel' : subproduto === 'automovel' ? 'Automóvel' : 'Pesados'}"
+Fonte Causten, branca, negrito.
+Logo abaixo:
+"${meses} meses"
+Fonte Causten, branca, regular.
+Não unir os textos em uma única linha.
+Não usar separadores como ponto ou hífen.
 
-Canto inferior direito da imagem:
-Texto PRINCIPAL da campanha, branco, maior que o texto do produto:
-"${campanha.textoPrincipal || ''}"
-
-${campanha.textoAuxiliar ? `
-Logo abaixo do texto principal:
-Texto menor, branco:
-"${campanha.textoAuxiliar}"
-` : ''}
+LADO DIREITO:
+Texto da campanha:
+"${campanha?.textoPrincipal || ''}"
+Fonte branca, maior que os textos do lado esquerdo,
+alinhamento à direita.
+Se existir texto auxiliar:
+"${campanha?.textoAuxiliar || ''}"
+Fonte branca menor logo abaixo.
 
 ==================================================
-BLOCO 2 — ÁREA DA TABELA (REGIÃO CENTRAL)
+FAIXA 2 — FUNDO DA TABELA
 ==================================================
 
-Fundo preto sólido ocupando toda a largura.
+Logo abaixo da imagem criar um bloco de fundo PRETO sólido
+ocupando toda a largura do flyer.
+Este fundo serve EXCLUSIVAMENTE para destacar a tabela.
 
-Sobre o fundo preto, centralizar uma tabela com:
-- Fundo branco
-- Bordas arredondadas
-- Alta legibilidade
+==================================================
+FAIXA 2A — TABELA (ELEMENTO CENTRAL)
+==================================================
 
-CABEÇALHO DA TABELA — REGRAS FIXAS (NÃO ALTERAR):
+Tabela centralizada dentro do fundo preto.
+Fundo da tabela: branco.
+Bordas arredondadas.
 
-Coluna Crédito:
-Fundo #2c3da7, texto branco
+Cabeçalho da tabela (cores FIXAS):
+Crédito → fundo #2c3da7 | texto branco
+Taxa Adm → fundo #000000 | texto branco
+Parcela Pessoa Física → fundo #1260c7 | texto branco
+Parcela Pessoa Jurídica → fundo #5691df | texto branco
 
-Coluna Taxa Adm:
-Fundo #000000, texto branco
-
-Coluna Parcela Pessoa Física:
-Fundo #1260c7, texto branco
-
-Coluna Parcela Pessoa Jurídica:
-Fundo #5691df, texto branco
-
-Ordem das colunas:
+Títulos das colunas (copiar exatamente):
 ${tabela.colunas.join(' | ')}
 
-Linhas da tabela:
-${tabela.linhas.map(l => `- ${l}`).join('\n')}
+Linhas da tabela (copiar exatamente, uma por linha):
+${tabela.linhas.map(l => `• ${l}`).join('\n')}
 
-Fonte preta, simples e clara.
-
-==================================================
-FAIXA DE LANCES (ABAIXO DA TABELA)
-==================================================
-
-Logo abaixo da tabela, criar UM ÚNICO RETÂNGULO HORIZONTAL:
-- Mesma largura da tabela
-- Cor #2c3da7
-- Altura reduzida
-- Bordas levemente arredondadas
-
-Dentro deste retângulo:
-Todos os textos de lance devem estar NA MESMA LINHA HORIZONTAL,
-alinhados entre si,
-fonte branca, pequena e em negrito:
-
-${lances.length ? lances.map(l => `• ${l}`).join('   ') : ' '}
+Fonte preta, clara, legível.
+Não estilizar criativamente.
+Não alterar ordem das colunas.
 
 ==================================================
-BLOCO 3 — RODAPÉ (OBRIGATÓRIO)
+FAIXA 3 — LANCES (OBRIGATÓRIA)
 ==================================================
+
+Logo abaixo da tabela criar uma faixa horizontal fina.
+
+Fundo sólido #2c3da7.
+Largura exatamente igual à tabela.
+Altura baixa.
+
+Todos os textos devem ficar:
+• na MESMA LINHA
+• alinhados ao centro
+• fonte Causten
+• branca
+• negrito
+• tamanho pequeno
+
+Textos dos lances (não alterar conteúdo):
+${lances.length ? lances.join('   •   ') : ''}
+
+Esta faixa NÃO pode ser omitida.
+
+==================================================
+FAIXA 4 — RODAPÉ (ÚLTIMA FAIXA)
+==================================================
+
+Abaixo da faixa de lances.
 
 Fundo preto sólido.
 
 Texto legal centralizado,
 fonte pequena,
-cor cinza-claro:
+cinza-claro,
+fonte Causten.
 
-"${rodape}"
-
-==================================================
-TEXTOS OBRIGATÓRIOS — NÃO OMITIR
-==================================================
-
-- Produto e meses: "${subproduto} • ${meses} meses"
-- Texto da campanha: "${campanha.textoPrincipal || ''}"
-- Texto do rodapé legal conforme informado
+Texto do rodapé (copiar exatamente):
+"${rodape || ''}"
 
 ==================================================
-REGRAS FINAIS
+REGRAS FINAIS (OBRIGATÓRIAS)
 ==================================================
 
-- Não adicionar elementos extras
-- Não mudar cores do cabeçalho
-- Não mover a tabela para cima da imagem
-- Layout técnico, limpo e organizado
+• Não estender a imagem além da FAIXA 1.
+• Não mover rodapé para cima da tabela.
+• Não unir produto e meses em uma única linha.
+• Não ignorar lances.
+• Não criar elementos extras.
+• Não corrigir textos automaticamente.
+• Manter hierarquia visual limpa e organizada.
 `.trim();
+  }
+
+  throw new Error('Combinação de produto não suportada');
 }
