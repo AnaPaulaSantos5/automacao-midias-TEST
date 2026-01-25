@@ -1,4 +1,4 @@
-import { chatEngine } from '../utils/chatEngine'; // se chatEngine está no mesmo nível
+import { chatEngine } from '../../chatEngine'; // se chatEngine está no mesmo nível
 import { imageEngine } from './imageEngine'; // se imageEngine está no mesmo nível
 import { initialState } from '../../data/state'; // caminho corrigido
 import { normalizarStateFinal } from '../../utils/normalizarStateFinal';
