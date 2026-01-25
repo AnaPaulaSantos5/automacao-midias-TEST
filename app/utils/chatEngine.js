@@ -6,7 +6,8 @@ function garantirState(state) {
   return {
     ...initialState,
     ...state,
-    tabela: state.tabela || { colunas: [], linhas: [] }
+    tabela: state.tabela || { colunas: [], linhas: [] },
+    lances: state.lances || []
   };
 }
 
@@ -87,8 +88,7 @@ export function chatEngine(message, state = initialState) {
         novoState.etapa = 'CONFIRMACAO';
 
         return {
-          resposta:
-            'Perfeito. Vou preparar o flyer conforme o padrão da Confi Seguros. Posso gerar agora?',
+          resposta: 'Posso gerar o flyer agora?',
           state: garantirState(novoState)
         };
       }
@@ -98,8 +98,7 @@ export function chatEngine(message, state = initialState) {
         novoState.etapa = 'CONFIRMACAO';
 
         return {
-          resposta:
-            'Perfeito. Vou preparar o flyer conforme o padrão da Confi Seguros. Posso gerar agora?',
+          resposta: 'Posso gerar o flyer agora?',
           state: garantirState(novoState)
         };
       }
@@ -164,7 +163,6 @@ export function chatEngine(message, state = initialState) {
       }
 
       novoState.meses = meses;
-      novoState.aceitaCampanha = true;
       novoState.etapa = 'FINANCAS_CAMPANHA_TITULO';
 
       return {
@@ -193,7 +191,6 @@ export function chatEngine(message, state = initialState) {
         novoState.campanha.textoAuxiliar = message;
       }
 
-      novoState.aceitaTabela = true;
       novoState.tabela = { colunas: [], linhas: [] };
       novoState.etapa = 'FINANCAS_TABELA_COLUNAS';
 
@@ -220,10 +217,11 @@ export function chatEngine(message, state = initialState) {
 
     case 'FINANCAS_TABELA_LINHAS':
       if (texto === 'ok') {
-        novoState.etapa = 'CONFIRMACAO';
+        novoState.lances = [];
+        novoState.etapa = 'FINANCAS_LANCES';
 
         return {
-          resposta: 'Posso gerar o flyer agora?',
+          resposta: 'Deseja adicionar textos de lances? Digite um por vez ou "não".',
           state: garantirState(novoState)
         };
       }
@@ -232,6 +230,48 @@ export function chatEngine(message, state = initialState) {
 
       return {
         resposta: 'Linha adicionada. Digite outra ou "ok".',
+        state: garantirState(novoState)
+      };
+
+    /* =========================
+       FINANÇAS — LANCES
+    ========================= */
+    case 'FINANCAS_LANCES':
+
+      if (texto.includes('nao')) {
+        novoState.etapa = 'FINANCAS_RODAPE';
+
+        return {
+          resposta: 'Informe o texto legal do rodapé.',
+          state: garantirState(novoState)
+        };
+      }
+
+      if (texto === 'ok') {
+        novoState.etapa = 'FINANCAS_RODAPE';
+
+        return {
+          resposta: 'Informe o texto legal do rodapé.',
+          state: garantirState(novoState)
+        };
+      }
+
+      novoState.lances.push(message);
+
+      return {
+        resposta: 'Lance adicionado. Digite outro ou "ok".',
+        state: garantirState(novoState)
+      };
+
+    /* =========================
+       FINANÇAS — RODAPÉ
+    ========================= */
+    case 'FINANCAS_RODAPE':
+      novoState.rodape = message;
+      novoState.etapa = 'CONFIRMACAO';
+
+      return {
+        resposta: 'Posso gerar o flyer agora?',
         state: garantirState(novoState)
       };
 
