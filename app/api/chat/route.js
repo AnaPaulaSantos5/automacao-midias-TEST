@@ -1,4 +1,4 @@
-import { chatEngine } from './chatEngine'; // caminho relativo direto
+import { chatEngine } from '@/chatEngine'; // caminho relativo direto
 import { initialState } from '../../data/state';
 import { imageEngine } from '../utils/imageEngine'; // server-only
 import { normalizarStateFinal } from '../../utils/normalizarStateFinal';
