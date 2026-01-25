@@ -14,95 +14,98 @@ export function gerarPrompt(state) {
 
   const imagemBase =
     subproduto === 'imovel'
-      ? 'Casa moderna de alto padrão, arquitetura contemporânea, fotografia realista'
+      ? 'Casa moderna de arquitetura contemporânea, fotografia realista'
       : subproduto === 'automovel'
-      ? 'Carro atual em cenário urbano realista'
+      ? 'Carro atual em ambiente urbano realista'
       : 'Caminhão moderno em estrada, fotografia profissional';
 
   return `
-Crie uma imagem vertical com layout rigorosamente dividido em três blocos verticais.
+Crie uma imagem vertical com layout rígido e controlado, seguindo exatamente as divisões abaixo.
 
 ==================================================
-BLOCO 1 — IMAGEM SUPERIOR (EXATAMENTE 30% DA ALTURA)
+BLOCO 1 — IMAGEM SUPERIOR (APROX. 25% DA ALTURA TOTAL)
 ==================================================
 
-Este bloco ocupa apenas 30% da altura total da imagem.
-A imagem NÃO pode ultrapassar esse limite.
+A imagem deve ocupar NO MÁXIMO 25% da altura total.
+Ela não pode avançar para o restante da composição.
 
-Conteúdo da imagem:
+Imagem:
 ${imagemBase}
 
-Sobre a imagem, aplique DOIS overlays pretos translúcidos:
-- Um overlay preto suave no lado esquerdo
-- Um overlay preto suave no lado direito
-Transparência leve (aprox. 20–30%).
-Os overlays devem estar SOBRE a imagem, não fora dela.
+Sobre a imagem, aplicar DOIS RETÂNGULOS PRETOS SEMITRANSPARENTES:
+- Um retângulo no lado esquerdo da imagem
+- Um retângulo no lado direito da imagem
+Cor preta com transparência leve (20% a 30%).
+Os retângulos devem ficar SOBRE a imagem, como camadas.
 
-TEXTOS SOBRE A IMAGEM (dentro dos 30%):
+TEXTOS SOBRE A IMAGEM (OBRIGATÓRIOS):
 
-Canto inferior esquerdo:
+Canto inferior esquerdo da imagem:
 Texto pequeno, branco, alinhado à esquerda:
 "${subproduto.toUpperCase()} • ${meses} MESES"
 
-Canto inferior direito:
-Texto médio, branco, alinhado à direita:
+Canto inferior direito da imagem:
+Texto PRINCIPAL da campanha, branco, maior que o texto do produto:
 "${campanha.textoPrincipal || ''}"
-${campanha.textoAuxiliar ? `Texto menor logo abaixo: "${campanha.textoAuxiliar}"` : ''}
 
-Nenhum texto grande.
-Nenhum texto fora da imagem.
+${campanha.textoAuxiliar ? `
+Logo abaixo do texto principal:
+Texto menor, branco:
+"${campanha.textoAuxiliar}"
+` : ''}
 
 ==================================================
-BLOCO 2 — ÁREA DA TABELA (APROX. 50% DA ALTURA)
+BLOCO 2 — ÁREA DA TABELA (REGIÃO CENTRAL)
 ==================================================
 
 Fundo preto sólido ocupando toda a largura.
 
-Sobre este fundo preto, centralizar uma tabela com:
+Sobre o fundo preto, centralizar uma tabela com:
 - Fundo branco
 - Bordas arredondadas
-- Proporção clara e organizada
+- Alta legibilidade
 
-Cabeçalho da tabela — CORES FIXAS (OBRIGATÓRIO):
+CABEÇALHO DA TABELA — REGRAS FIXAS (NÃO ALTERAR):
 
-Crédito:
-• Fundo #2c3da7
-• Texto branco
+Coluna Crédito:
+Fundo #2c3da7, texto branco
 
-Taxa Adm:
-• Fundo #000000
-• Texto branco
+Coluna Taxa Adm:
+Fundo #000000, texto branco
 
-Parcela Pessoa Física:
-• Fundo #1260c7
-• Texto branco
+Coluna Parcela Pessoa Física:
+Fundo #1260c7, texto branco
 
-Parcela Pessoa Jurídica:
-• Fundo #5691df
-• Texto branco
+Coluna Parcela Pessoa Jurídica:
+Fundo #5691df, texto branco
 
-Colunas exatamente nesta ordem:
+Ordem das colunas:
 ${tabela.colunas.join(' | ')}
 
 Linhas da tabela:
 ${tabela.linhas.map(l => `- ${l}`).join('\n')}
 
-Fonte preta, simples, altamente legível.
-Nenhuma estilização criativa.
-
-Abaixo da tabela:
-Um retângulo horizontal menor,
-mesma largura da tabela,
-cor #2c3da7,
-bordas levemente arredondadas.
-
-Dentro do retângulo:
-${lances.length
-  ? lances.map(l => `Texto branco pequeno e em negrito: "${l}"`).join('\n')
-  : 'Nenhum texto de lance.'}
+Fonte preta, simples e clara.
 
 ==================================================
-BLOCO 3 — RODAPÉ (APROX. 20% DA ALTURA)
+FAIXA DE LANCES (ABAIXO DA TABELA)
+==================================================
+
+Logo abaixo da tabela, criar UM ÚNICO RETÂNGULO HORIZONTAL:
+- Mesma largura da tabela
+- Cor #2c3da7
+- Altura reduzida
+- Bordas levemente arredondadas
+
+Dentro deste retângulo:
+Todos os textos de lance devem estar NA MESMA LINHA HORIZONTAL,
+alinhados entre si,
+fonte branca, pequena e em negrito:
+
+${lances.length ? lances.map(l => `• ${l}`).join('   ') : ' '}
+
+==================================================
+BLOCO 3 — RODAPÉ (OBRIGATÓRIO)
 ==================================================
 
 Fundo preto sólido.
@@ -114,14 +117,20 @@ cor cinza-claro:
 "${rodape}"
 
 ==================================================
-REGRAS FINAIS (NÃO QUEBRAR)
+TEXTOS OBRIGATÓRIOS — NÃO OMITIR
 ==================================================
 
-- A imagem nunca pode ultrapassar 30% da altura
-- Os overlays devem ser camadas sobre a imagem
-- A tabela nunca pode ficar sobre a imagem
-- As cores do cabeçalho não podem ser alteradas
+- Produto e meses: "${subproduto} • ${meses} meses"
+- Texto da campanha: "${campanha.textoPrincipal || ''}"
+- Texto do rodapé legal conforme informado
+
+==================================================
+REGRAS FINAIS
+==================================================
+
 - Não adicionar elementos extras
-- Layout limpo, técnico e organizado
+- Não mudar cores do cabeçalho
+- Não mover a tabela para cima da imagem
+- Layout técnico, limpo e organizado
 `.trim();
 }
