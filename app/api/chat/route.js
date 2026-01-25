@@ -1,6 +1,7 @@
-import { chatEngine } from '../../utils/chatEngine';       // 2 níveis pra utils
-import { initialState } from './././data/state';       // 3 níveis pra data
-import { imageEngine } from './imageEngine';               // mesmo nível, imageEngine.js
+import { chatEngine } from './chatEngine'; // se chatEngine está no mesmo nível
+import { imageEngine } from './imageEngine'; // se imageEngine está no mesmo nível
+import { initialState } from '../../data/state'; // caminho corrigido
+import { normalizarStateFinal } from '../../utils/normalizarStateFinal';
 
 export async function POST(req) {
   try {
