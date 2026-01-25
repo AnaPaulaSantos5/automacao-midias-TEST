@@ -1,140 +1,85 @@
 export function gerarPrompt(state) {
+  if (!state || !state.area) {
+    throw new Error('State inválido');
+  }
+
   const {
     area,
-    produto,
     subproduto,
     meses,
     campanha,
-    textoComplementar,
     tabela,
-    lances,
-    textoLegal
+    textoComplementar
   } = state;
 
   /* ======================================================
      CONFI FINANÇAS — CONSÓRCIO COM TABELA
   ====================================================== */
+  if (area === 'confi-financas' && subproduto) {
+    const imagemTopo =
+      subproduto === 'imovel'
+        ? 'casa moderna contemporânea, fotografia realista, iluminação natural'
+        : subproduto === 'automovel'
+        ? 'carro simples e atual em ambiente urbano ou estrada, fotografia realista'
+        : 'caminhão moderno em estrada com vegetação ao redor, fotografia realista';
 
-  if (
-    area === 'Finanças' &&
-    produto === 'Consórcio' &&
-    tabela &&
-    Array.isArray(tabela.linhas)
-  ) {
     return `
-Flyer publicitário vertical institucional da marca CONFI FINANÇAS.
+A imagem contém uma composição vertical estruturada da seguinte forma:
 
-IDENTIDADE VISUAL (OBRIGATÓRIA):
-- Estilo corporativo, limpo, organizado, profissional.
-- Fonte principal: Causten ou equivalente geométrica moderna.
-- Paleta fixa:
-  - Azul escuro: #2c3da7
-  - Azul principal: #1260c7
-  - Azul claro: #5691df
-  - Branco: #ffffff
-  - Preto: #000000
-- NÃO usar elementos aleatórios, gradientes, sombras exageradas ou ícones decorativos.
-- NÃO inventar textos legais, se não houver texto legal, NÃO escrever nada.
+NO TOPO:
+- Uma imagem ocupando aproximadamente o terço superior da composição.
+- A imagem mostra ${imagemTopo}.
+- A imagem não ocupa a composição inteira.
+- Existem overlays pretos muito suaves nas laterais da imagem, cobrindo cerca de 20% a 30% da largura.
+- Sobre a imagem, próximo à base e antes da tabela, aparecem textos claros e legíveis:
+  - Texto informativo com o prazo: "${meses} meses"
+  - Texto de campanha principal: "${campanha?.textoPrincipal || ''}"
 
-FORMATO:
-- Flyer vertical (proporção 4:5 ou 1080x1350).
-- Layout rigidamente dividido em áreas.
+ABAIXO DA IMAGEM:
+- Um fundo preto sólido (#000000) ocupa todo o restante da composição.
+- Nenhuma imagem aparece nesta área.
 
-========================================================
-LAYOUT ESTRUTURAL (NÃO DESVIAR)
-========================================================
+BLOCO CENTRAL:
+- Uma tabela centralizada sobre o fundo preto.
+- A tabela possui fundo branco sólido e bordas arredondadas.
+- A tabela é o elemento visual principal da composição.
 
-1) TOPO — 30% DA ALTURA TOTAL
-- Imagem fotográfica ocupando APENAS o topo (30%).
-- Tipo de imagem conforme subproduto:
-  • Imóvel → casa moderna contemporânea
-  • Automóvel → carro simples, moderno, fundo neutro
-  • Pesados → caminhão em estrada
-- Aplicar overlays pretos suaves nas laterais da imagem (20% a 30% de opacidade).
-- A imagem NÃO pode invadir o restante do flyer.
-- NÃO cortar o assunto principal da imagem.
-- Textos institucionais (produto, meses e campanha) posicionados no final da imagem, levemente acima da tabela, bem alinhados e legíveis.
+CABEÇALHO DA TABELA (CORES FIXAS):
+- Coluna "Crédito": fundo #2c3da7 com texto branco (#ffffff).
+- Coluna "Taxa Adm": fundo #000000 com texto branco (#ffffff).
+- Coluna "Parcela Pessoa Física": fundo #1260c7 com texto branco (#ffffff).
+- Coluna "Parcela Pessoa Jurídica": fundo #5691df com texto branco (#ffffff).
 
-Textos no TOPO:
-- Produto: Consórcio ${subproduto}
-- Prazo: ${meses} meses
-- Destaque da campanha: ${campanha}
-
-========================================================
-2) BLOCO CENTRAL — 50% DA ALTURA
-========================================================
-
-- Fundo PRETO sólido (#000000).
-- Centralizado neste fundo, uma TABELA com:
-  - Fundo branco sólido (#ffffff)
-  - Bordas arredondadas
-  - Boa margem interna
-  - Alta legibilidade
-
-TABELA — CABEÇALHO (OBRIGATÓRIO):
-- Coluna 1: "Crédito"
-  • Fundo: #2c3da7
-  • Texto branco (#ffffff)
-- Coluna 2: "Taxa Adm"
-  • Fundo: #000000
-  • Texto branco (#ffffff)
-- Coluna 3: "Parcela Pessoa Física"
-  • Fundo: #1260c7
-  • Texto branco (#ffffff)
-- Coluna 4: "Parcela Pessoa Jurídica"
-  • Fundo: #5691df
-  • Texto branco (#ffffff)
-
-TABELA — CONTEÚDO:
-- Fonte preta, clara e legível.
-- Alinhamento limpo e consistente.
-- NÃO alterar valores.
-- NÃO inventar linhas.
-
-Colunas:
+TÍTULOS DAS COLUNAS:
 ${tabela.colunas.join(' | ')}
 
-Linhas:
-${tabela.linhas.map(l => l.join(' | ')).join('\n')}
+LINHAS DA TABELA (VALORES EXATOS):
+${tabela.linhas.map(linha => `- ${linha}`).join('\n')}
 
---------------------------------------------------------
+- O texto da tabela é preto, claro, legível e sem estilização criativa.
+
 ABAIXO DA TABELA:
-- Um retângulo horizontal com largura igual à tabela.
-- Altura menor.
-- Cor de fundo: #2c3da7
-- Texto centralizado, branco, em negrito (Causten).
-- Texto exatamente como informado pelo usuário:
-"${lances}"
+- Um retângulo horizontal com a mesma largura da tabela.
+- Fundo na cor #2c3da7.
+- Altura menor que a tabela.
+- Dentro desse retângulo, texto branco, pequeno e em negrito informando lances, conforme definido pelo usuário.
 
-========================================================
-3) RODAPÉ — 20% DA ALTURA
-========================================================
+RODAPÉ:
+- Texto legal pequeno, centralizado.
+- Cor cinza-claro.
+- Conteúdo:
+"${textoComplementar || ''}"
 
-- Fundo preto sólido (#000000).
-- Texto legal em fonte pequena, cinza claro.
-- Alinhado ao centro.
-- NÃO resumir, NÃO adaptar, NÃO criar texto.
+RESTRIÇÕES IMPORTANTES:
+- Não gerar prédios genéricos ou skyline urbano.
+- Não omitir a tabela.
+- Não alterar as cores definidas.
+- Não inventar textos, valores ou elementos gráficos.
+- Não usar outras imagens além da imagem do topo.
 
-Texto legal:
-${textoLegal || ''}
-
-========================================================
-REGRAS CRÍTICAS (NÃO QUEBRAR):
-- NÃO escrever “texto legal”, “exemplo”, “placeholder”.
-- NÃO ocupar o flyer inteiro com imagem.
-- NÃO mover a tabela para cima da imagem.
-- NÃO estilizar diferente do descrito.
-- NÃO improvisar layout.
-- O layout deve parecer padronizado e reutilizável.
-`;
+O resultado final deve ser organizado, legível e fiel à estrutura descrita acima.
+`.trim();
   }
 
-  /* ======================================================
-     FALLBACK (OUTROS PRODUTOS)
-  ====================================================== */
-
-  return `
-Flyer institucional corporativo da marca CONFI.
-Estilo limpo, profissional e organizado.
-`;
+  throw new Error('Combinação de produto não suportada');
 }
