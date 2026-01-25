@@ -1,4 +1,4 @@
-import { chatEngine } from '../../chat/chatEngine';
+import { chatEngine } from '../chatEngine';
 import { imageEngine } from '../../utils/imageEngine';
 import { initialState } from '../../data/state';
 import { normalizarConsorcioTabelaState } from '../../../lib/flyerSchemas/consorcioTabela.schema';
