@@ -1,26 +1,21 @@
-import { chatEngine } from '@/chatEngine'; // caminho relativo direto
-import { initialState } from '../../data/state';
-import { imageEngine } from '../utils/imageEngine'; // server-only
-import { normalizarStateFinal } from '../../utils/normalizarStateFinal';
+import { chatEngine } from './chatEngine'; // relativo à mesma pasta
+import { initialState } from '../../../data/state';
+import { imageEngine } from '../../utils/imageEngine'; // server-only
 
 export async function POST(req) {
   try {
     const body = await req.json();
-
     const message = body.message;
-    const state =
-      body.state && body.state.etapa
-        ? body.state
-        : initialState;
+    const state = body.state && body.state.etapa ? body.state : initialState;
 
     const chatResult = chatEngine(message, state);
 
-    // 🔹 fluxo normal do chat
+    // fluxo normal do chat
     if (chatResult.state.etapa !== 'FINAL') {
       return Response.json(chatResult);
     }
 
-    // 🔹 geração de imagem apenas no FINAL
+    // geração de imagem apenas no FINAL
     const imageResult = await imageEngine(chatResult.state);
 
     if (!imageResult.ok) {
@@ -38,7 +33,6 @@ export async function POST(req) {
 
   } catch (error) {
     console.error('🔥 ERRO REAL:', error);
-
     return Response.json({
       resposta: 'Erro inesperado.',
       state: initialState
