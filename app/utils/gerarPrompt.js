@@ -1,10 +1,9 @@
 export function gerarPrompt(state) {
-  if (!state || !state.area || !state.subproduto) {
+  if (!state || state.area !== 'confi-financas') {
     throw new Error('State inválido');
   }
 
   const {
-    area,
     subproduto,
     meses,
     campanha = {},
@@ -12,10 +11,6 @@ export function gerarPrompt(state) {
     lances = [],
     rodape = ''
   } = state;
-
-  if (area !== 'confi-financas') {
-    throw new Error('Área não suportada');
-  }
 
   const imagemBase =
     subproduto === 'imovel'
@@ -25,62 +20,108 @@ export function gerarPrompt(state) {
       : 'Caminhão moderno em estrada, fotografia profissional';
 
   return `
-Imagem vertical.
+Crie uma imagem vertical com layout rigorosamente dividido em três blocos verticais.
 
-A imagem é dividida em três partes claras e obrigatórias:
+==================================================
+BLOCO 1 — IMAGEM SUPERIOR (EXATAMENTE 30% DA ALTURA)
+==================================================
 
-PARTE SUPERIOR (30% da altura):
-Imagem fotográfica mostrando:
+Este bloco ocupa apenas 30% da altura total da imagem.
+A imagem NÃO pode ultrapassar esse limite.
+
+Conteúdo da imagem:
 ${imagemBase}
 
-A imagem NÃO ocupa o flyer inteiro.
+Sobre a imagem, aplique DOIS overlays pretos translúcidos:
+- Um overlay preto suave no lado esquerdo
+- Um overlay preto suave no lado direito
+Transparência leve (aprox. 20–30%).
+Os overlays devem estar SOBRE a imagem, não fora dela.
 
-Aplicar overlays pretos muito suaves nas laterais da imagem (20% a 30% de cada lado).
+TEXTOS SOBRE A IMAGEM (dentro dos 30%):
 
-No canto inferior esquerdo da imagem:
-Texto branco:
-"${subproduto.toUpperCase()} | ${meses} MESES"
+Canto inferior esquerdo:
+Texto pequeno, branco, alinhado à esquerda:
+"${subproduto.toUpperCase()} • ${meses} MESES"
 
-No canto inferior direito da imagem:
-Texto branco maior:
+Canto inferior direito:
+Texto médio, branco, alinhado à direita:
 "${campanha.textoPrincipal || ''}"
 ${campanha.textoAuxiliar ? `Texto menor logo abaixo: "${campanha.textoAuxiliar}"` : ''}
 
-PARTE CENTRAL (50% da altura):
-Fundo preto sólido.
+Nenhum texto grande.
+Nenhum texto fora da imagem.
 
-Sobre esse fundo preto, uma tabela centralizada com:
-- fundo branco
-- bordas arredondadas
-- bem destacada
+==================================================
+BLOCO 2 — ÁREA DA TABELA (APROX. 50% DA ALTURA)
+==================================================
 
-Cabeçalho da tabela com cores fixas:
-Crédito: fundo #2c3da7, texto branco
-Taxa Adm: fundo #000000, texto branco
-Parcela Pessoa Física: fundo #1260c7, texto branco
-Parcela Pessoa Jurídica: fundo #5691df, texto branco
+Fundo preto sólido ocupando toda a largura.
 
-Colunas:
+Sobre este fundo preto, centralizar uma tabela com:
+- Fundo branco
+- Bordas arredondadas
+- Proporção clara e organizada
+
+Cabeçalho da tabela — CORES FIXAS (OBRIGATÓRIO):
+
+Crédito:
+• Fundo #2c3da7
+• Texto branco
+
+Taxa Adm:
+• Fundo #000000
+• Texto branco
+
+Parcela Pessoa Física:
+• Fundo #1260c7
+• Texto branco
+
+Parcela Pessoa Jurídica:
+• Fundo #5691df
+• Texto branco
+
+Colunas exatamente nesta ordem:
 ${tabela.colunas.join(' | ')}
 
-Linhas:
+Linhas da tabela:
 ${tabela.linhas.map(l => `- ${l}`).join('\n')}
 
-Fonte preta, clara e extremamente legível.
+Fonte preta, simples, altamente legível.
+Nenhuma estilização criativa.
 
-Logo abaixo da tabela:
-Um retângulo horizontal menor, largura igual à tabela, cor #2c3da7.
+Abaixo da tabela:
+Um retângulo horizontal menor,
+mesma largura da tabela,
+cor #2c3da7,
+bordas levemente arredondadas.
 
-Dentro desse retângulo:
-${lances.length ? lances.map(l => `Texto branco pequeno: "${l}"`).join('\n') : 'Sem texto de lances.'}
+Dentro do retângulo:
+${lances.length
+  ? lances.map(l => `Texto branco pequeno e em negrito: "${l}"`).join('\n')
+  : 'Nenhum texto de lance.'}
 
-PARTE INFERIOR (20% da altura):
-Fundo preto.
+==================================================
+BLOCO 3 — RODAPÉ (APROX. 20% DA ALTURA)
+==================================================
 
-Texto legal centralizado, fonte pequena, cinza claro:
+Fundo preto sólido.
+
+Texto legal centralizado,
+fonte pequena,
+cor cinza-claro:
+
 "${rodape}"
 
-Resultado final:
-Imagem organizada, limpa, fiel ao layout descrito, sem elementos extras.
+==================================================
+REGRAS FINAIS (NÃO QUEBRAR)
+==================================================
+
+- A imagem nunca pode ultrapassar 30% da altura
+- Os overlays devem ser camadas sobre a imagem
+- A tabela nunca pode ficar sobre a imagem
+- As cores do cabeçalho não podem ser alteradas
+- Não adicionar elementos extras
+- Layout limpo, técnico e organizado
 `.trim();
 }
