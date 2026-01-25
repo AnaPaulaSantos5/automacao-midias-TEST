@@ -1,6 +1,6 @@
-import { chatEngine } from './chatEngine'; // relativo à mesma pasta
-import { initialState } from '../../../data/state';
-import { imageEngine } from '../../utils/imageEngine'; // server-only
+import { chatEngine } from '../../utils/chatEngine';       // 2 níveis pra utils
+import { initialState } from '../../../data/state';        // 3 níveis pra data
+import { imageEngine } from './imageEngine';               // mesmo nível, imageEngine.js
 
 export async function POST(req) {
   try {
@@ -10,12 +10,10 @@ export async function POST(req) {
 
     const chatResult = chatEngine(message, state);
 
-    // fluxo normal do chat
     if (chatResult.state.etapa !== 'FINAL') {
       return Response.json(chatResult);
     }
 
-    // geração de imagem apenas no FINAL
     const imageResult = await imageEngine(chatResult.state);
 
     if (!imageResult.ok) {
