@@ -1,36 +1,42 @@
-import { validarState } from './stateValidator';
-import { gerarPrompt } from './gerarPrompt';
-import { IMAGE_PROVIDERS } from './imageProviders';
+import { renderToStaticMarkup } from 'react-dom/server';
+import { createElement } from 'react';
+import FlyerConsorcioTabela from '../components/flyers/FlyerConsorcioTabela';
 
-import { gerarImagemDalle } from './providers/dalle';
-
-export async function imageEngine(state, provider = IMAGE_PROVIDERS.DALLE) {
-  const validation = validarState(state);
-
-  if (!validation.ok) {
-    return { ok: false, error: validation.errors.join(' | ') };
-  }
-
-  let prompt;
+export async function imageEngine(state) {
   try {
-    prompt = gerarPrompt(state);
-  } catch (e) {
-    return { ok: false, error: 'Erro ao gerar prompt' };
-  }
+    let FlyerComponent = null;
 
-  try {
-    const imageBase64 = await gerarImagemDalle(prompt);
+    // 🔹 escolha do flyer pelo tipo
+    switch (state.flyerTipo) {
+      case 'CONSORCIO_TABELA':
+        FlyerComponent = FlyerConsorcioTabela;
+        break;
 
-    if (!imageBase64 || typeof imageBase64 !== 'string') {
-      return { ok: false, error: 'Imagem inválida retornada' };
+      default:
+        return {
+          ok: false,
+          error: 'Tipo de flyer não reconhecido.'
+        };
     }
+
+    // 🔹 renderização do componente
+    const element = createElement(FlyerComponent, state);
+    const html = renderToStaticMarkup(element);
+
+    // 🔹 conversão HTML → imagem (base64)
+    const imageBase64 = await gerarImagem(html);
 
     return {
       ok: true,
       imageBase64
     };
+
   } catch (error) {
-    console.error('[IMAGE ENGINE ERROR]', error);
-    return { ok: false, error: 'Falha ao gerar imagem' };
+    console.error('❌ Erro no imageEngine:', error);
+
+    return {
+      ok: false,
+      error: 'Erro ao gerar imagem.'
+    };
   }
 }
