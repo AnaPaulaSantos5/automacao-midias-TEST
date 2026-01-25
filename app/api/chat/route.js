@@ -1,5 +1,5 @@
 import { chatEngine } from '../../utils/chatEngine';       // 2 níveis pra utils
-import { initialState } from '../../../../data/state';       // 3 níveis pra data
+import { initialState } from '../../../data/state';       // 3 níveis pra data
 import { imageEngine } from './imageEngine';               // mesmo nível, imageEngine.js
 
 export async function POST(req) {
