@@ -1,7 +1,7 @@
 import { chatEngine } from '../../utils/chatEngine';
 import { imageEngine } from '../../utils/imageEngine';
 import { initialState } from '../../data/state';
-import { normalizarStateFinal } from '../../utils/normalizarStateFinal';
+import { normalizarConsorcioTabelaState } from '../../lib/flyerSchemas/consorcioTabela.schema';
 
 export async function POST(req) {
   try {
@@ -20,20 +20,27 @@ export async function POST(req) {
       return Response.json(chatResult);
     }
 
+    // 🔹 normalização do state final
+    let finalState = chatResult.state;
+
+    if (finalState.flyerTipo === 'CONSORCIO_TABELA') {
+      finalState = normalizarConsorcioTabelaState(finalState);
+    }
+
     // 🔹 geração de imagem
-    const imageResult = await imageEngine(chatResult.state);
+    const imageResult = await imageEngine(finalState);
 
     if (!imageResult.ok) {
       return Response.json({
         resposta: imageResult.error,
-        state: chatResult.state
+        state: finalState
       });
     }
 
     return Response.json({
       resposta: 'Flyer gerado com sucesso.',
       imageBase64: imageResult.imageBase64,
-      state: chatResult.state
+      state: finalState
     });
 
   } catch (error) {
