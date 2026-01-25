@@ -14,141 +14,147 @@ export function gerarPrompt(state) {
     rodape
   } = state;
 
-  /* ======================================================
-     CONFI FINANÇAS — CONSÓRCIO COM TABELA
-  ====================================================== */
   if (area === 'confi-financas' && produto === 'financas') {
     const imagemBase =
       subproduto === 'imovel'
-        ? 'Casa moderna contemporânea, fotografia realista, ângulo frontal, iluminação natural'
+        ? 'Casa moderna contemporânea, fotografia realista, enquadramento horizontal, iluminação natural'
         : subproduto === 'automovel'
         ? 'Carro simples e atual em ambiente urbano, fotografia realista'
         : 'Caminhão moderno em estrada, fotografia profissional';
 
     return `
-Criar uma flyer vertical seguindo EXATAMENTE a estrutura abaixo.
-Não inventar layout diferente.
-Não mover elementos de faixa.
-Não omitir nenhuma faixa.
+Criar uma flyer vertical seguindo RIGOROSAMENTE a estrutura abaixo.
+Não reinterpretar layout.
+Não omitir elementos.
+Não corrigir textos do usuário.
 
 ==================================================
-FAIXA 1 — IMAGEM (APROX. 25% DA ALTURA TOTAL)
+FAIXA 1 — IMAGEM (NO MÁXIMO 20% DA ALTURA TOTAL)
 ==================================================
 
-Imagem ocupa apenas a parte superior do flyer.
-Não ultrapassar esta faixa.
+Imagem ocupa somente a parte superior do flyer.
 
 Imagem:
 ${imagemBase}
 
-Sobre a imagem aplicar DOIS overlays pretos suaves,
-um à esquerda e um à direita,
-com opacidade entre 20% e 30%.
-Os overlays devem ser sutis, elegantes, sem parecer blocos sólidos.
+Aplicar DOIS overlays verticais pretos,
+um na lateral esquerda e outro na lateral direita.
+Opacidade entre 20% e 30%.
+Overlays devem ser suaves, integrados à imagem,
+não parecer blocos decorativos.
 
-Dentro da imagem, próximo à base da faixa:
+TEXTOS SOBRE A IMAGEM (ALINHADOS À BASE DA IMAGEM):
 
 LADO ESQUERDO:
-Texto:
+Texto 1:
 "${subproduto === 'imovel' ? 'Imóvel' : subproduto === 'automovel' ? 'Automóvel' : 'Pesados'}"
-Fonte Causten, branca, negrito.
-Logo abaixo:
-"${meses} meses"
-Fonte Causten, branca, regular.
-Não unir os textos em uma única linha.
-Não usar separadores como ponto ou hífen.
+Fonte Causten, branca, NEGRITO.
 
-LADO DIREITO:
-Texto da campanha:
+Texto 2 (abaixo):
+"${meses} meses"
+Fonte Causten, branca, REGULAR.
+Nunca unir esses textos em uma única linha.
+
+LADO DIREITO — TEXTO DE CAMPANHA:
+Usar o texto exatamente como fornecido:
 "${campanha?.textoPrincipal || ''}"
-Fonte branca, maior que os textos do lado esquerdo,
-alinhamento à direita.
+
+Aplicar hierarquia:
+• Se existir número ou porcentagem:
+  - número em Causten NEGRITO, maior
+  - texto antes em tamanho médio
+  - texto depois em tamanho menor
+• Se não existir número:
+  - primeira palavra maior
+  - restante em tamanho médio
+
 Se existir texto auxiliar:
 "${campanha?.textoAuxiliar || ''}"
-Fonte branca menor logo abaixo.
+Fonte menor logo abaixo.
 
 ==================================================
 FAIXA 2 — FUNDO DA TABELA
 ==================================================
 
-Logo abaixo da imagem criar um bloco de fundo PRETO sólido
-ocupando toda a largura do flyer.
-Este fundo serve EXCLUSIVAMENTE para destacar a tabela.
+Logo abaixo da imagem,
+criar um bloco PRETO sólido ocupando toda a largura.
+Este bloco serve exclusivamente como fundo da tabela.
 
 ==================================================
-FAIXA 2A — TABELA (ELEMENTO CENTRAL)
+FAIXA 2A — TABELA
 ==================================================
 
-Tabela centralizada dentro do fundo preto.
-Fundo da tabela: branco.
+Tabela centralizada.
+Fundo branco.
 Bordas arredondadas.
 
-Cabeçalho da tabela (cores FIXAS):
-Crédito → fundo #2c3da7 | texto branco
-Taxa Adm → fundo #000000 | texto branco
-Parcela Pessoa Física → fundo #1260c7 | texto branco
-Parcela Pessoa Jurídica → fundo #5691df | texto branco
+A tabela DEVE conter exatamente 4 colunas.
+Não remover colunas.
+Não reduzir conteúdo.
 
-Títulos das colunas (copiar exatamente):
+Cabeçalho (cores FIXAS):
+Crédito → #2c3da7
+Taxa Adm → #000000
+Parcela Pessoa Física → #1260c7
+Parcela Pessoa Jurídica → #5691df
+Texto branco em todas.
+
+Títulos (copiar exatamente):
 ${tabela.colunas.join(' | ')}
 
-Linhas da tabela (copiar exatamente, uma por linha):
+Linhas (copiar exatamente):
 ${tabela.linhas.map(l => `• ${l}`).join('\n')}
 
-Fonte preta, clara, legível.
-Não estilizar criativamente.
-Não alterar ordem das colunas.
+Fonte preta, legível, sem estilização criativa.
 
 ==================================================
 FAIXA 3 — LANCES (OBRIGATÓRIA)
 ==================================================
 
-Logo abaixo da tabela criar uma faixa horizontal fina.
+Logo abaixo da tabela.
 
-Fundo sólido #2c3da7.
-Largura exatamente igual à tabela.
-Altura baixa.
+Faixa horizontal com:
+• fundo #2c3da7
+• largura igual à tabela
+• altura baixa
 
-Todos os textos devem ficar:
-• na MESMA LINHA
-• alinhados ao centro
-• fonte Causten
-• branca
+Todos os textos:
+• mesma linha
+• centralizados
+• Causten
+• branco
 • negrito
 • tamanho pequeno
 
-Textos dos lances (não alterar conteúdo):
+Textos (não alterar):
 ${lances.length ? lances.join('   •   ') : ''}
-
-Esta faixa NÃO pode ser omitida.
 
 ==================================================
 FAIXA 4 — RODAPÉ (ÚLTIMA FAIXA)
 ==================================================
 
-Abaixo da faixa de lances.
+Última área do flyer.
+Nunca sobrepor à tabela.
 
 Fundo preto sólido.
+Texto centralizado.
+Fonte Causten pequena.
+Cor cinza-claro.
 
-Texto legal centralizado,
-fonte pequena,
-cinza-claro,
-fonte Causten.
-
-Texto do rodapé (copiar exatamente):
+Texto (copiar exatamente):
 "${rodape || ''}"
 
 ==================================================
-REGRAS FINAIS (OBRIGATÓRIAS)
+REGRAS FINAIS
 ==================================================
 
-• Não estender a imagem além da FAIXA 1.
-• Não mover rodapé para cima da tabela.
-• Não unir produto e meses em uma única linha.
-• Não ignorar lances.
+• Não aumentar a imagem.
+• Não omitir overlays.
+• Não remover colunas.
+• Não reescrever textos.
+• Não corrigir português.
+• Não mover o rodapé.
 • Não criar elementos extras.
-• Não corrigir textos automaticamente.
-• Manter hierarquia visual limpa e organizada.
 `.trim();
   }
 
