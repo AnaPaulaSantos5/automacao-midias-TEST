@@ -1,6 +1,7 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import { createElement } from 'react';
 import FlyerConsorcioTabela from '../components/flyers/FlyerConsorcioTabela';
+import { gerarImagem } from './gerarImagem'; // seu arquivo que chama puppeteer
 
 export async function imageEngine(state) {
   try {
@@ -13,30 +14,20 @@ export async function imageEngine(state) {
         break;
 
       default:
-        return {
-          ok: false,
-          error: 'Tipo de flyer não reconhecido.'
-        };
+        return { ok: false, error: 'Tipo de flyer não reconhecido.' };
     }
 
-    // 🔹 renderização do componente
-    const element = createElement(FlyerComponent, state);
+    // 🔹 renderiza o componente
+    const element = createElement(FlyerComponent, { data: state });
     const html = renderToStaticMarkup(element);
 
-    // 🔹 conversão HTML → imagem (base64)
+    // 🔹 converte HTML → imagem base64
     const imageBase64 = await gerarImagem(html);
 
-    return {
-      ok: true,
-      imageBase64
-    };
+    return { ok: true, imageBase64 };
 
   } catch (error) {
     console.error('❌ Erro no imageEngine:', error);
-
-    return {
-      ok: false,
-      error: 'Erro ao gerar imagem.'
-    };
+    return { ok: false, error: 'Erro ao gerar imagem.' };
   }
 }
