@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import FlyerConsorcioTabela from './components/flyers/FlyerConsorcioTabela';
+import FlyerConsorcioTabela from '../components/flyers/FlyerConsorcioTabela';
 
 export default function ChatBox() {
   const [messages, setMessages] = useState([]);
