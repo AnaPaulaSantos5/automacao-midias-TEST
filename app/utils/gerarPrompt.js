@@ -3,160 +3,156 @@ export function gerarPrompt(state) {
     throw new Error('State inválido');
   }
 
-  const {
-    area,
-    produto,
-    subproduto,
-    meses,
-    campanha,
-    tabela,
-    lances = [],
-    rodape
-  } = state;
+  const { area, produto, subproduto } = state;
 
+  /* ======================================================
+     CONFI FINANÇAS — CONSÓRCIO (IMAGEM BASE)
+  ====================================================== */
   if (area === 'confi-financas' && produto === 'financas') {
-    const imagemBase =
-      subproduto === 'imovel'
-        ? 'Casa moderna contemporânea, fotografia realista, enquadramento horizontal, iluminação natural'
-        : subproduto === 'automovel'
-        ? 'Carro simples e atual em ambiente urbano, fotografia realista'
-        : 'Caminhão moderno em estrada, fotografia profissional';
+    let descricaoImagem = '';
+
+    if (subproduto === 'imovel') {
+      descricaoImagem = `
+Fotografia realista de uma casa moderna,
+arquitetura contemporânea brasileira,
+ambiente residencial real,
+iluminação natural suave,
+sensação de conquista e estabilidade,
+sem pessoas em destaque,
+sem texto,
+sem elementos gráficos,
+estilo fotografia profissional.
+`;
+    }
+
+    if (subproduto === 'automovel') {
+      descricaoImagem = `
+Fotografia realista de um carro atual,
+modelo popular ou médio,
+em ambiente urbano ou estrada,
+luz natural,
+sensação de conquista e mobilidade,
+sem pessoas em destaque,
+sem texto,
+sem elementos gráficos,
+estilo fotografia profissional.
+`;
+    }
+
+    if (subproduto === 'pesados') {
+      descricaoImagem = `
+Fotografia realista de um caminhão moderno,
+em estrada brasileira,
+cenário real,
+luz natural,
+sensação de trabalho e crescimento,
+sem pessoas em destaque,
+sem texto,
+sem elementos gráficos,
+estilo fotografia profissional.
+`;
+    }
 
     return `
-Criar uma flyer vertical seguindo RIGOROSAMENTE a estrutura abaixo.
-Não reinterpretar layout.
-Não omitir elementos.
-Não corrigir textos do usuário.
+${descricaoImagem}
 
-==================================================
-FAIXA 1 — IMAGEM (NO MÁXIMO 20% DA ALTURA TOTAL)
-==================================================
-
-Imagem ocupa somente a parte superior do flyer.
-
-Imagem:
-${imagemBase}
-
-Aplicar DOIS overlays verticais pretos,
-um na lateral esquerda e outro na lateral direita.
-Opacidade entre 20% e 30%.
-Overlays devem ser suaves, integrados à imagem,
-não parecer blocos decorativos.
-
-TEXTOS SOBRE A IMAGEM (ALINHADOS À BASE DA IMAGEM):
-
-LADO ESQUERDO:
-Texto 1:
-"${subproduto === 'imovel' ? 'Imóvel' : subproduto === 'automovel' ? 'Automóvel' : 'Pesados'}"
-Fonte Causten, branca, NEGRITO.
-
-Texto 2 (abaixo):
-"${meses} meses"
-Fonte Causten, branca, REGULAR.
-Nunca unir esses textos em uma única linha.
-
-LADO DIREITO — TEXTO DE CAMPANHA:
-Usar o texto exatamente como fornecido:
-"${campanha?.textoPrincipal || ''}"
-
-Aplicar hierarquia:
-• Se existir número ou porcentagem:
-  - número em Causten NEGRITO, maior
-  - texto antes em tamanho médio
-  - texto depois em tamanho menor
-• Se não existir número:
-  - primeira palavra maior
-  - restante em tamanho médio
-
-Se existir texto auxiliar:
-"${campanha?.textoAuxiliar || ''}"
-Fonte menor logo abaixo.
-
-==================================================
-FAIXA 2 — FUNDO DA TABELA
-==================================================
-
-Logo abaixo da imagem,
-criar um bloco PRETO sólido ocupando toda a largura.
-Este bloco serve exclusivamente como fundo da tabela.
-
-==================================================
-FAIXA 2A — TABELA
-==================================================
-
-Tabela centralizada.
-Fundo branco.
-Bordas arredondadas.
-
-A tabela DEVE conter exatamente 4 colunas.
-Não remover colunas.
-Não reduzir conteúdo.
-
-Cabeçalho (cores FIXAS):
-Crédito → #2c3da7
-Taxa Adm → #000000
-Parcela Pessoa Física → #1260c7
-Parcela Pessoa Jurídica → #5691df
-Texto branco em todas.
-
-Títulos (copiar exatamente):
-${tabela.colunas.join(' | ')}
-
-Linhas (copiar exatamente):
-${tabela.linhas.map(l => `• ${l}`).join('\n')}
-
-Fonte preta, legível, sem estilização criativa.
-
-==================================================
-FAIXA 3 — LANCES (OBRIGATÓRIA)
-==================================================
-
-Logo abaixo da tabela.
-
-Faixa horizontal com:
-• fundo #2c3da7
-• largura igual à tabela
-• altura baixa
-
-Todos os textos:
-• mesma linha
-• centralizados
-• Causten
-• branco
-• negrito
-• tamanho pequeno
-
-Textos (não alterar):
-${lances.length ? lances.join('   •   ') : ''}
-
-==================================================
-FAIXA 4 — RODAPÉ (ÚLTIMA FAIXA)
-==================================================
-
-Última área do flyer.
-Nunca sobrepor à tabela.
-
-Fundo preto sólido.
-Texto centralizado.
-Fonte Causten pequena.
-Cor cinza-claro.
-
-Texto (copiar exatamente):
-"${rodape || ''}"
-
-==================================================
-REGRAS FINAIS
-==================================================
-
-• Não aumentar a imagem.
-• Não omitir overlays.
-• Não remover colunas.
-• Não reescrever textos.
-• Não corrigir português.
-• Não mover o rodapé.
-• Não criar elementos extras.
+A imagem deve:
+- parecer uma fotografia real
+- não conter textos, números ou gráficos
+- não conter logotipos
+- não conter molduras
+- não conter overlays
+- ser limpa e bem iluminada
+- permitir recorte vertical (9:16) e quadrado (1:1)
 `.trim();
   }
 
-  throw new Error('Combinação de produto não suportada');
+  /* ======================================================
+     CONFI SEGUROS — RESIDENCIAL / GERAL
+  ====================================================== */
+  if (area === 'confi-seguros') {
+    return `
+Fotografia realista de pessoas dentro de casa,
+ambiente residencial acolhedor,
+família ou casal em momento cotidiano real,
+luz natural suave,
+sensação de segurança, conforto e tranquilidade,
+sem poses forçadas,
+sem texto,
+sem elementos gráficos,
+estilo fotografia profissional.
+
+A imagem deve:
+- parecer uma fotografia real
+- não conter textos ou logotipos
+- não conter molduras ou overlays
+- permitir recorte vertical e quadrado
+`.trim();
+  }
+
+  /* ======================================================
+     CONFI BENEFÍCIOS — ODONTO
+  ====================================================== */
+  if (area === 'confi-beneficios' && subproduto === 'odonto') {
+    return `
+Fotografia realista de pessoas sorrindo,
+momentos naturais de lazer,
+família ou amigos,
+expressão leve e espontânea,
+ambiente externo ou interno real,
+sem poses publicitárias,
+sem texto,
+sem elementos gráficos,
+estilo fotografia profissional.
+
+A imagem deve:
+- parecer uma fotografia real
+- não conter textos ou logotipos
+- permitir recorte vertical e quadrado
+`.trim();
+  }
+
+  /* ======================================================
+     CONFI BENEFÍCIOS — SAÚDE
+  ====================================================== */
+  if (area === 'confi-beneficios' && subproduto === 'saude') {
+    return `
+Fotografia realista de pessoas em atividades leves,
+caminhada, bicicleta ou parque,
+momento cotidiano e saudável,
+luz natural,
+sensação de bem-estar e qualidade de vida,
+sem texto,
+sem elementos gráficos,
+estilo fotografia profissional.
+
+A imagem deve:
+- parecer uma fotografia real
+- não conter textos ou logotipos
+- permitir recorte vertical e quadrado
+`.trim();
+  }
+
+  /* ======================================================
+     CONFI BENEFÍCIOS — PET
+  ====================================================== */
+  if (area === 'confi-beneficios' && subproduto === 'pet') {
+    return `
+Fotografia realista de pessoas com seus pets,
+interação natural e afetuosa,
+ambiente real,
+expressões espontâneas,
+sem poses forçadas,
+sem texto,
+sem elementos gráficos,
+estilo fotografia profissional.
+
+A imagem deve:
+- parecer uma fotografia real
+- não conter textos ou logotipos
+- permitir recorte vertical e quadrado
+`.trim();
+  }
+
+  throw new Error('Combinação não suportada para geração de imagem');
 }
