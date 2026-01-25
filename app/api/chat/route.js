@@ -1,46 +1,49 @@
 import { chatEngine } from '../../utils/chatEngine';
 import { imageEngine } from '../../utils/imageEngine';
 import { initialState } from '../../data/state';
-import { normalizarConsorcioTabelaState } from '../../lib/flyerSchemas/consorcioTabela.schema';
+import { normalizarConsorcioTabelaState } from '../../../lib/flyerSchemas/consorcioTabela.schema';
 
 export async function POST(req) {
   try {
     const body = await req.json();
-
     const message = body.message;
     const state =
       body.state && body.state.etapa
         ? body.state
         : initialState;
 
+    // 🔹 executa o chat
     const chatResult = chatEngine(message, state);
+    let novoState = chatResult.state;
 
-    // 🔹 fluxo normal do chat
-    if (chatResult.state.etapa !== 'FINAL') {
+    // 🔹 Se ainda não é FINAL, retorna apenas a resposta
+    if (novoState.etapa !== 'FINAL') {
       return Response.json(chatResult);
     }
 
-    // 🔹 normalização do state final
-    let finalState = chatResult.state;
-
-    if (finalState.flyerTipo === 'CONSORCIO_TABELA') {
-      finalState = normalizarConsorcioTabelaState(finalState);
+    // 🔹 Normaliza os dados do flyer (somente para consórcio com tabela)
+    if (novoState.area === 'confi-financas' && novoState.subproduto) {
+      novoState = {
+        ...novoState,
+        ...normalizarConsorcioTabelaState(novoState),
+        flyerTipo: 'CONSORCIO_TABELA'
+      };
     }
 
-    // 🔹 geração de imagem
-    const imageResult = await imageEngine(finalState);
+    // 🔹 Geração de imagem
+    const imageResult = await imageEngine(novoState);
 
     if (!imageResult.ok) {
       return Response.json({
         resposta: imageResult.error,
-        state: finalState
+        state: novoState
       });
     }
 
     return Response.json({
       resposta: 'Flyer gerado com sucesso.',
       imageBase64: imageResult.imageBase64,
-      state: finalState
+      state: novoState
     });
 
   } catch (error) {
