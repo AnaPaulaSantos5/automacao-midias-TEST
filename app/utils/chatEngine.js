@@ -1,33 +1,23 @@
 import { estadoInicial } from '../data/state';
 
-export function chatEngine(mensagem, estado = estadoInicial) {
+export function chatEngine(mensagem, estado) {
   const texto = mensagem.toLowerCase().trim();
   const novo = structuredClone(estado);
 
   switch (estado.etapa) {
 
-    case 'COMECO':
+    case 'COMEÇAR':
       novo.etapa = 'AREA';
-      return {
-        resposta: 'Qual área deseja? Seguros, Finanças ou Benefícios?',
-        estado: novo
-      };
+      return { resposta: 'Qual área? Seguros, Finanças ou Benefícios?', estado: novo };
 
     case 'AREA':
-      if (texto.includes('fin')) {
-        novo.area = 'financas';
-        novo.etapa = 'PRODUTO';
-        return { resposta: 'Qual produto? Consórcio?', estado: novo };
+      if (texto.includes('finan')) {
+        novo.area = 'confi-financas';
+        novo.produto = 'consorcio';
+        novo.etapa = 'SUBTIPO';
+        return { resposta: 'Consórcio de Imóvel, Automóvel ou Pesados?', estado: novo };
       }
-      return { resposta: 'Informe: Seguros, Finanças ou Benefícios.', estado };
-
-    case 'PRODUTO':
-      novo.produto = 'consorcio';
-      novo.etapa = 'SUBTIPO';
-      return {
-        resposta: 'Qual o tipo? Imóvel, Automóvel ou Pesados?',
-        estado: novo
-      };
+      return { resposta: 'No momento só Finanças.', estado: novo };
 
     case 'SUBTIPO':
       novo.subproduto = texto;
@@ -37,62 +27,46 @@ export function chatEngine(mensagem, estado = estadoInicial) {
     case 'MESES':
       novo.meses = mensagem;
       novo.etapa = 'TITULO';
-      return { resposta: 'Qual o destaque da campanha?', estado: novo };
+      return { resposta: 'Destaque principal da campanha?', estado: novo };
 
     case 'TITULO':
       novo.campanha.textoPrincipal = mensagem;
       novo.etapa = 'AUX';
-      return {
-        resposta: 'Deseja texto auxiliar? (ou "não")',
-        estado: novo
-      };
+      return { resposta: 'Texto auxiliar? (ou "não")', estado: novo };
 
     case 'AUX':
-      if (!texto.includes('não')) {
-        novo.campanha.textoAuxiliar = mensagem;
-      }
+      if (!texto.includes('não')) novo.campanha.textoAuxiliar = mensagem;
       novo.etapa = 'COLUNAS';
-      return {
-        resposta: 'Informe as colunas da tabela separadas por |',
-        estado: novo
-      };
+      return { resposta: 'Colunas da tabela separadas por |', estado: novo };
 
     case 'COLUNAS':
-      novo.tabela.colunas = mensagem.split('|').map(c => c.trim());
+      novo.tabela.colunas = mensagem.split('|').map(t => t.trim());
       novo.etapa = 'LINHAS';
-      return {
-        resposta: 'Informe uma linha da tabela (ou "ok")',
-        estado: novo
-      };
+      return { resposta: 'Digite uma linha da tabela ou "ok"', estado: novo };
 
     case 'LINHAS':
       if (texto === 'ok') {
         novo.etapa = 'LANCES';
-        return { resposta: 'Informe um lance/destaque:', estado: novo };
+        return { resposta: 'Digite um lance ou "ok"', estado: novo };
       }
-      novo.tabela.linhas.push(mensagem.split('|').map(c => c.trim()));
-      return { resposta: 'Próxima linha ou "ok"', estado: novo };
+      novo.tabela.linhas.push(mensagem.split('|').map(t => t.trim()));
+      return { resposta: 'Linha adicionada. Próxima ou "ok"', estado: novo };
 
     case 'LANCES':
+      if (texto === 'ok') {
+        novo.etapa = 'RODAPE';
+        return { resposta: 'Texto legal do rodapé:', estado: novo };
+      }
       novo.lances.push(mensagem);
-      novo.etapa = 'RODAPE';
-      return {
-        resposta: 'Informe o texto legal do rodapé.',
-        estado: novo
-      };
+      return { resposta: 'Lance adicionado. Outro ou "ok"', estado: novo };
 
     case 'RODAPE':
       novo.rodape = mensagem;
+      novo.layout = 'consorcio-tabela';
       novo.etapa = 'FINAL';
-      return {
-        resposta: 'Flyer gerado com sucesso.',
-        estado: novo
-      };
+      return { resposta: 'Flyer gerado com sucesso.', estado: novo };
 
     default:
-      return {
-        resposta: 'Vamos começar novamente.',
-        estado: estadoInicial
-      };
+      return { resposta: 'Reiniciando.', estado: estadoInicial };
   }
 }
