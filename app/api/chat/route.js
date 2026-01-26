@@ -1,28 +1,24 @@
 import { estadoInicial } from '../../data/state';
 import { chatEngine } from '../../utils/chatEngine';
-import { templateFinancas } from '../../utils/templateEngine';
-import { gerarImagem } from '../../utils/imageGenerator';
+import { templateConsorcioTabela } from '../../utils/templateEngine';
+import { gerarImagemSVG } from '../../utils/imageGenerator';
 
 export async function POST(req) {
   const body = await req.json();
-
-  const mensagem = body.mensagem || '';
   const estado = body.estado || estadoInicial;
 
-  const resultado = chatEngine(mensagem, estado);
+  const resultado = chatEngine(body.mensagem, estado);
 
-  // 🔹 Chat ainda em andamento
   if (resultado.estado.etapa !== 'FINAL') {
-    return new Response(JSON.stringify(resultado), { status: 200 });
+    return Response.json(resultado);
   }
 
-  // 🔹 FINAL → GERA FLYER
-  const html = templateFinancas(resultado.estado);
-  const imageBase64 = await gerarImagem(html);
+  const template = templateConsorcioTabela(resultado.estado);
+  const svg = gerarImagemSVG(template);
 
-  return new Response(JSON.stringify({
-    resposta: 'Flyer gerado com sucesso.',
+  return Response.json({
+    resposta: resultado.resposta,
     estado: resultado.estado,
-    imageBase64
-  }), { status: 200 });
+    image: `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`
+  });
 }
