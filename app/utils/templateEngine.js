@@ -1,47 +1,32 @@
 export function templateFinancas(estado) {
-  return {
-    marca: 'Confi Finanças',
-    paleta: ['#1260c7', '#ffffff', '#000000'],
-    formato: 'instagram-feed',
+  return `
+  <html>
+    <body style="margin:0;font-family:Arial;background:#1260c7;color:white;">
+      <div style="padding:30px;">
+        <h1>${estado.campanha.textoPrincipal}</h1>
+        <p>${estado.campanha.textoAuxiliar || ''}</p>
 
-    layout: 'consorcio-com-tabela',
+        <h3>Consórcio ${estado.subproduto} – ${estado.meses} meses</h3>
 
-    imagem: {
-      tema: estado.subproduto,
-      overlays: true,
-      protecaoContorno: {
-        ativo: true,
-        cor: '#1260c7',
-        espessura: '5px'
-      }
-    },
+        <table style="width:100%;background:white;color:black;border-collapse:collapse;">
+          <tr>
+            ${estado.tabela.colunas.map(c =>
+              `<th style="border:1px solid #000;padding:8px">${c}</th>`
+            ).join('')}
+          </tr>
 
-    textos: {
-      titulo: estado.campanha.textoPrincipal,
-      subtitulo: estado.campanha.textoAuxiliar
-    },
+          ${estado.tabela.linhas.map(l =>
+            `<tr>${l.map(c =>
+              `<td style="border:1px solid #000;padding:8px">${c}</td>`
+            ).join('')}</tr>`
+          ).join('')}
+        </table>
 
-    tabela: {
-      colunas: estado.tabela.colunas,
-      linhas: estado.tabela.linhas,
-      cores: [
-        '#2c3da7',
-        '#000000',
-        '#1260c7',
-        '#5691df'
-      ]
-    },
+        <p><strong>Lances:</strong> ${estado.lances.join(' • ')}</p>
 
-    lances: estado.extras,
-
-    rodape: estado.rodape,
-
-    contato: {
-      whatsapp: '(41) 99973-3350',
-      telefone: '(41) 3019-7500',
-      instagram: '@confi_seguros'
-    },
-
-    cta: false // consórcio com tabela não tem CTA
-  };
+        <small>${estado.rodape}</small>
+      </div>
+    </body>
+  </html>
+  `;
 }
