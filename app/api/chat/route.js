@@ -1,8 +1,7 @@
-import { estadoInicial } from '../../../data/state';
-import { chatEngine } from '../../../utils/chatEngine';
-import { templateFinancas } from '../../../utils/templateEngine';
-import { gerarImagem } from '../../../utils/imageGenerator';
-
+import { estadoInicial } from '../../data/state';
+import { chatEngine } from '../../utils/chatEngine';
+import { templateFinancas } from '../../utils/templateEngine';
+import { gerarImagem } from '../../utils/imageGenerator';
 export async function POST(req) {
   let body, mensagem, estado;
 
