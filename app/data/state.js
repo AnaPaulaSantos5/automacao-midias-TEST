@@ -1,10 +1,9 @@
 export const estadoInicial = {
-  etapa: 'COMECO',
+  etapa: 'COMEÇAR',
 
   area: null,
   produto: null,
   subproduto: null,
-
   meses: null,
 
   campanha: {
@@ -18,5 +17,7 @@ export const estadoInicial = {
   },
 
   lances: [],
-  rodape: null
+  rodape: null,
+
+  layout: null
 };
