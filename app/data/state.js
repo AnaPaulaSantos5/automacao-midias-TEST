@@ -1,10 +1,11 @@
 export const estadoInicial = {
-  etapa: 'inicio',
+  etapa: 'COMECO',
 
-  area: null,           // seguros | financas | beneficios
-  produto: null,        // consorcio | seguro | beneficio
-  subproduto: null,     // imovel | auto | pet | odonto | saude etc
-  prazo: null,          // meses
+  area: null,
+  produto: null,
+  subproduto: null,
+
+  meses: null,
 
   campanha: {
     textoPrincipal: null,
@@ -16,8 +17,6 @@ export const estadoInicial = {
     linhas: []
   },
 
-  extras: [],           // lances, destaques
-  rodape: null,
-
-  prontoParaGerar: false
+  lances: [],
+  rodape: null
 };
