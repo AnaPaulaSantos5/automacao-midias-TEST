@@ -1,40 +1,24 @@
-import { chatEngine } from '../../chatEngine'; // se chatEngine está no mesmo nível
-import { imageEngine } from './imageEngine'; // se imageEngine está no mesmo nível
-import { initialState } from '../../data/state'; // caminho corrigido
-import { normalizarStateFinal } from '../../utils/normalizarStateFinal';
+import { estadoInicial } from '@/data/state';
+import { chatEngine } from '@/utils/chatEngine';
+import { templateFinancas } from '@/utils/templateEngine';
+import { gerarImagem } from '@/utils/imageGenerator';
 
 export async function POST(req) {
-  try {
-    const body = await req.json();
-    const message = body.message;
-    const state = body.state && body.state.etapa ? body.state : initialState;
+  const body = await req.json();
+  let estado = body.estado || estadoInicial;
 
-    const chatResult = chatEngine(message, state);
+  const resultado = chatEngine(body.mensagem, estado);
 
-    if (chatResult.state.etapa !== 'FINAL') {
-      return Response.json(chatResult);
-    }
+  if (resultado.estado.prontoParaGerar) {
+    const template = templateFinancas(resultado.estado);
+    const imagem = await gerarImagem(template);
 
-    const imageResult = await imageEngine(chatResult.state);
-
-    if (!imageResult.ok) {
-      return Response.json({
-        resposta: imageResult.error,
-        state: chatResult.state
-      });
-    }
-
-    return Response.json({
+    return new Response(JSON.stringify({
       resposta: 'Flyer gerado com sucesso.',
-      imageBase64: imageResult.imageBase64,
-      state: chatResult.state
-    });
-
-  } catch (error) {
-    console.error('🔥 ERRO REAL:', error);
-    return Response.json({
-      resposta: 'Erro inesperado.',
-      state: initialState
-    });
+      preview: imagem,
+      estado: resultado.estado
+    }), { status: 200 });
   }
+
+  return new Response(JSON.stringify(resultado), { status: 200 });
 }
