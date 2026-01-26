@@ -1,24 +1,23 @@
-export const initialState = {
-  etapa: 'START',
+export const estadoInicial = {
+  etapa: 'inicio',
 
-  produto: null,
-  area: null,
+  area: null,           // seguros | financas | beneficios
+  produto: null,        // consorcio | seguro | beneficio
+  subproduto: null,     // imovel | auto | pet | odonto | saude etc
+  prazo: null,          // meses
 
-  subproduto: null,
-  meses: null,
-  campanha: null,
+  campanha: {
+    textoPrincipal: null,
+    textoAuxiliar: null
+  },
 
   tabela: {
     colunas: [],
     linhas: []
   },
 
-  textoPrincipal: null,
-  textoComplementar: null,
+  extras: [],           // lances, destaques
+  rodape: null,
 
-  formato: null,
-  canal: null,
-
-  aceitaTabela: false,
-  aceitaCampanha: false
+  prontoParaGerar: false
 };
