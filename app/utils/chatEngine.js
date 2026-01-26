@@ -1,111 +1,98 @@
-export function chatEngine(mensagem, estado) {
+import { estadoInicial } from '../data/state';
+
+export function chatEngine(mensagem, estado = estadoInicial) {
   const texto = mensagem.toLowerCase().trim();
+  const novo = structuredClone(estado);
 
-  // INÍCIO
-  if (estado.etapa === 'inicio') {
-    estado.etapa = 'area';
-    return {
-      resposta: 'Olá! Qual área deseja? Seguros, Finanças ou Benefícios?',
-      estado
-    };
+  switch (estado.etapa) {
+
+    case 'COMECO':
+      novo.etapa = 'AREA';
+      return {
+        resposta: 'Qual área deseja? Seguros, Finanças ou Benefícios?',
+        estado: novo
+      };
+
+    case 'AREA':
+      if (texto.includes('fin')) {
+        novo.area = 'financas';
+        novo.etapa = 'PRODUTO';
+        return { resposta: 'Qual produto? Consórcio?', estado: novo };
+      }
+      return { resposta: 'Informe: Seguros, Finanças ou Benefícios.', estado };
+
+    case 'PRODUTO':
+      novo.produto = 'consorcio';
+      novo.etapa = 'SUBTIPO';
+      return {
+        resposta: 'Qual o tipo? Imóvel, Automóvel ou Pesados?',
+        estado: novo
+      };
+
+    case 'SUBTIPO':
+      novo.subproduto = texto;
+      novo.etapa = 'MESES';
+      return { resposta: 'Em quantos meses?', estado: novo };
+
+    case 'MESES':
+      novo.meses = mensagem;
+      novo.etapa = 'TITULO';
+      return { resposta: 'Qual o destaque da campanha?', estado: novo };
+
+    case 'TITULO':
+      novo.campanha.textoPrincipal = mensagem;
+      novo.etapa = 'AUX';
+      return {
+        resposta: 'Deseja texto auxiliar? (ou "não")',
+        estado: novo
+      };
+
+    case 'AUX':
+      if (!texto.includes('não')) {
+        novo.campanha.textoAuxiliar = mensagem;
+      }
+      novo.etapa = 'COLUNAS';
+      return {
+        resposta: 'Informe as colunas da tabela separadas por |',
+        estado: novo
+      };
+
+    case 'COLUNAS':
+      novo.tabela.colunas = mensagem.split('|').map(c => c.trim());
+      novo.etapa = 'LINHAS';
+      return {
+        resposta: 'Informe uma linha da tabela (ou "ok")',
+        estado: novo
+      };
+
+    case 'LINHAS':
+      if (texto === 'ok') {
+        novo.etapa = 'LANCES';
+        return { resposta: 'Informe um lance/destaque:', estado: novo };
+      }
+      novo.tabela.linhas.push(mensagem.split('|').map(c => c.trim()));
+      return { resposta: 'Próxima linha ou "ok"', estado: novo };
+
+    case 'LANCES':
+      novo.lances.push(mensagem);
+      novo.etapa = 'RODAPE';
+      return {
+        resposta: 'Informe o texto legal do rodapé.',
+        estado: novo
+      };
+
+    case 'RODAPE':
+      novo.rodape = mensagem;
+      novo.etapa = 'FINAL';
+      return {
+        resposta: 'Flyer gerado com sucesso.',
+        estado: novo
+      };
+
+    default:
+      return {
+        resposta: 'Vamos começar novamente.',
+        estado: estadoInicial
+      };
   }
-
-  // ÁREA
-  if (estado.etapa === 'area') {
-    if (texto.includes('fin')) {
-      estado.area = 'financas';
-      estado.etapa = 'produto';
-      return { resposta: 'Perfeito. Qual produto? Consórcio?', estado };
-    }
-  }
-
-  // PRODUTO
-  if (estado.etapa === 'produto') {
-    estado.produto = 'consorcio';
-    estado.etapa = 'subproduto';
-    return {
-      resposta: 'Qual o tipo de consórcio? Imóvel, Automóvel ou Pesados?',
-      estado
-    };
-  }
-
-  // SUBPRODUTO
-  if (estado.etapa === 'subproduto') {
-    estado.subproduto = texto;
-    estado.etapa = 'prazo';
-    return {
-      resposta: 'Em quantos meses deseja o consórcio?',
-      estado
-    };
-  }
-
-  // PRAZO
-  if (estado.etapa === 'prazo') {
-    estado.prazo = Number(texto);
-    estado.etapa = 'campanha';
-    return {
-      resposta: 'Qual o destaque principal da campanha?',
-      estado
-    };
-  }
-
-  // CAMPANHA
-  if (estado.etapa === 'campanha') {
-    estado.campanha.textoPrincipal = texto;
-    estado.etapa = 'campanhaAux';
-    return {
-      resposta: 'Deseja um texto auxiliar? (ou digite "não")',
-      estado
-    };
-  }
-
-  if (estado.etapa === 'campanhaAux') {
-    estado.campanha.textoAuxiliar =
-      texto === 'não' ? '' : texto;
-    estado.etapa = 'tabela';
-    return {
-      resposta: 'Informe as colunas da tabela separadas por |',
-      estado
-    };
-  }
-
-  // TABELA
-  if (estado.etapa === 'tabela') {
-    estado.tabela.colunas = mensagem.split('|').map(c => c.trim());
-    estado.etapa = 'linhas';
-    return {
-      resposta: 'Informe as linhas da tabela (uma por linha)',
-      estado
-    };
-  }
-
-  if (estado.etapa === 'linhas') {
-    estado.tabela.linhas.push(mensagem);
-    if (estado.tabela.linhas.length < 4) {
-      return { resposta: 'Próxima linha:', estado };
-    }
-    estado.etapa = 'extras';
-    return { resposta: 'Informe os lances/destaques:', estado };
-  }
-
-  // EXTRAS
-  if (estado.etapa === 'extras') {
-    estado.extras.push(mensagem);
-    estado.etapa = 'rodape';
-    return { resposta: 'Informe o texto legal do rodapé:', estado };
-  }
-
-  // FINAL
-  if (estado.etapa === 'rodape') {
-    estado.rodape = mensagem;
-    estado.prontoParaGerar = true;
-    estado.etapa = 'fim';
-
-    return {
-      resposta: 'Flyer confirmado. Gerando agora.',
-      estado
-    };
-  }
-
-  return { resposta: 'Não entendi, pode repetir?', estado };
 }
