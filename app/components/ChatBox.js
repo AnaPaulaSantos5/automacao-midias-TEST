@@ -1,163 +1,73 @@
 'use client';
 
 import { useState } from 'react';
-import FlyerConsorcioTabela from '../components/flyers/FlyerConsorcioTabela';
 
 export default function ChatBox() {
-  const [messages, setMessages] = useState([]);
+  const [mensagens, setMensagens] = useState([]);
   const [input, setInput] = useState('');
-  const [state, setState] = useState(null);
-  const [previewImage, setPreviewImage] = useState(null);
+  const [estado, setEstado] = useState(null);
+  const [preview, setPreview] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  async function sendMessage() {
-    if (!input.trim() || loading) return;
+  async function enviarMensagem() {
+    if (!input.trim()) return;
 
-    const userText = input;
-
-    setMessages((prev) => [
-      ...prev,
-      { role: 'user', text: userText }
-    ]);
-
+    const msgUsuario = { autor: 'user', texto: input };
+    setMensagens(prev => [...prev, msgUsuario]);
     setInput('');
     setLoading(true);
 
-    let data = null;
+    const res = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        mensagem: input,
+        estado
+      })
+    });
 
-    try {
-      const res = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          message: userText,
-          state: state ?? null
-        })
-      });
+    const data = await res.json();
 
-      if (!res.ok) throw new Error('Erro HTTP');
-
-      data = await res.json();
-    } catch (err) {
-      setMessages((prev) => [
-        ...prev,
-        { role: 'bot', text: 'Erro de conexão com o servidor.' }
-      ]);
-      setLoading(false);
-      return;
-    }
-
-    // 🔒 Resposta textual
-    setMessages((prev) => [
+    setMensagens(prev => [
       ...prev,
-      {
-        role: 'bot',
-        text:
-          typeof data?.resposta === 'string'
-            ? data.resposta
-            : 'Ocorreu um erro ao processar a resposta.'
-      }
+      { autor: 'bot', texto: data.resposta }
     ]);
 
-    // 🔒 State confiável
-    if (data?.state && typeof data.state === 'object') {
-      setState(data.state);
-    }
+    setEstado(data.estado || null);
 
-    // 🔒 Imagem base (apenas fundo)
-    if (
-      typeof data?.imageBase64 === 'string' &&
-      data.imageBase64.startsWith('iVBOR')
-    ) {
-      setPreviewImage(data.imageBase64);
+    if (data.imageBase64) {
+      setPreview(`data:image/png;base64,${data.imageBase64}`);
     }
 
     setLoading(false);
   }
 
   return (
-    <div
-      style={{
-        display: 'grid',
-        gridTemplateColumns: '1fr 1fr',
-        gap: 32,
-        maxWidth: 1100,
-        margin: '0 auto',
-        padding: 24
-      }}
-    >
-      {/* CHAT */}
-      <div>
-        <h2>Assistente Confi</h2>
-
-        <div
-          style={{
-            border: '1px solid #ddd',
-            borderRadius: 8,
-            padding: 16,
-            minHeight: 300,
-            marginBottom: 16
-          }}
-        >
-          {messages.map((msg, i) => (
-            <div key={i} style={{ marginBottom: 12 }}>
-              <strong>{msg.role === 'user' ? 'Você' : 'Bot'}:</strong>
-              <div>{String(msg.text)}</div>
-            </div>
-          ))}
-
-          {loading && (
-            <div style={{ color: '#888' }}>Processando...</div>
-          )}
-        </div>
-
-        <div style={{ display: 'flex', gap: 8 }}>
-          <input
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="Digite sua mensagem"
-            style={{ flex: 1, padding: 8 }}
-            onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
-          />
-          <button onClick={sendMessage} disabled={loading}>
-            Enviar
-          </button>
-        </div>
+    <div style={{ maxWidth: 420, margin: '0 auto' }}>
+      <div style={{ border: '1px solid #ccc', padding: 12, minHeight: 300 }}>
+        {mensagens.map((m, i) => (
+          <div key={i} style={{ textAlign: m.autor === 'user' ? 'right' : 'left' }}>
+            <p><strong>{m.autor === 'user' ? 'Você' : 'Bot'}:</strong> {m.texto}</p>
+          </div>
+        ))}
+        {loading && <p>Digitando...</p>}
       </div>
 
-      {/* PREVIEW */}
-      <div>
-        <h2>Preview do Flyer</h2>
+      {preview && (
+        <div style={{ marginTop: 16 }}>
+          <p><strong>Preview do Flyer:</strong></p>
+          <img src={preview} alt="Flyer preview" style={{ width: '100%' }} />
+        </div>
+      )}
 
-        {!previewImage && (
-          <div
-            style={{
-              border: '2px dashed #ccc',
-              borderRadius: 8,
-              height: 300,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#777'
-            }}
-          >
-            Nenhum flyer gerado ainda
-          </div>
-        )}
-
-        {previewImage && state && (
-          <FlyerConsorcioTabela
-            data={{
-              imageBase64: previewImage,
-              subproduto: state.subproduto,
-              meses: state.meses,
-              campanha: state.campanha,
-              tabela: state.tabela,
-              lances: state.lances,
-              rodapeLegal: state.rodapeLegal
-            }}
-          />
-        )}
+      <div style={{ display: 'flex', marginTop: 8 }}>
+        <input
+          value={input}
+          onChange={e => setInput(e.target.value)}
+          placeholder="Digite aqui..."
+          style={{ flex: 1 }}
+        />
+        <button onClick={enviarMensagem}>Enviar</button>
       </div>
     </div>
   );
