@@ -1,315 +1,111 @@
-import { initialState } from '../data/state';
-import { normalizarSubtipoConsorcio } from '../utils/normalizador';
-import { gerarCopySeguroResidencial } from './copy/seguroResidencial';
+export function chatEngine(mensagem, estado) {
+  const texto = mensagem.toLowerCase().trim();
 
-function garantirState(state) {
-  return {
-    ...initialState,
-    ...state,
-    tabela: state.tabela || { colunas: [], linhas: [] },
-    lances: state.lances || []
-  };
-}
-
-function normalizarTexto(texto) {
-  return texto
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .trim();
-}
-
-export function chatEngine(message, state = initialState) {
-  const texto = normalizarTexto(message);
-  let novoState = { ...state };
-
-  switch (state.etapa) {
-
-    /* =========================
-       START
-    ========================= */
-    case 'START':
-      novoState.etapa = 'AREA';
-      return {
-        resposta: 'Olá! Qual área deseja? Seguros, Finanças ou Benefícios?',
-        state: garantirState(novoState)
-      };
-
-    /* =========================
-       AREA
-    ========================= */
-    case 'AREA':
-
-      if (texto.includes('segur')) {
-        novoState.area = 'confi-seguros';
-        novoState.produto = 'seguro';
-        novoState.etapa = 'TIPO_SEGURO';
-
-        return {
-          resposta: 'Perfeito. Qual tipo de seguro? Geral ou Residencial?',
-          state: garantirState(novoState)
-        };
-      }
-
-      if (texto.includes('finan')) {
-        novoState.area = 'confi-financas';
-        novoState.produto = 'financas';
-        novoState.etapa = 'FINANCAS_TIPO';
-
-        return {
-          resposta: 'Perfeito. Qual produto? Consórcio, Crédito ou Planejamento?',
-          state: garantirState(novoState)
-        };
-      }
-
-      if (texto.includes('benef')) {
-        novoState.area = 'confi-beneficios';
-        novoState.produto = 'beneficios';
-        novoState.etapa = 'BENEFICIOS_TIPO';
-
-        return {
-          resposta: 'Perfeito. Qual benefício? Saúde, Odonto ou Pet?',
-          state: garantirState(novoState)
-        };
-      }
-
-      return {
-        resposta: 'Por favor, informe: Seguros, Finanças ou Benefícios.',
-        state: garantirState(novoState)
-      };
-
-    /* =========================
-       SEGUROS
-    ========================= */
-    case 'TIPO_SEGURO':
-
-      if (texto.includes('resid')) {
-        novoState.subproduto = 'residencial';
-        novoState.etapa = 'CONFIRMACAO';
-
-        return {
-          resposta: 'Posso gerar o flyer agora?',
-          state: garantirState(novoState)
-        };
-      }
-
-      if (texto.includes('geral')) {
-        novoState.subproduto = 'geral';
-        novoState.etapa = 'CONFIRMACAO';
-
-        return {
-          resposta: 'Posso gerar o flyer agora?',
-          state: garantirState(novoState)
-        };
-      }
-
-      return {
-        resposta: 'Informe se o seguro é Geral ou Residencial.',
-        state: garantirState(novoState)
-      };
-
-    /* =========================
-       FINANÇAS — TIPO
-    ========================= */
-    case 'FINANCAS_TIPO':
-
-      if (texto.includes('consor')) {
-        novoState.etapa = 'FINANCAS_SUBTIPO';
-
-        return {
-          resposta: 'Qual o tipo de consórcio? Imóvel, Automóvel ou Pesados?',
-          state: garantirState(novoState)
-        };
-      }
-
-      return {
-        resposta: 'No momento trabalhamos apenas com Consórcio.',
-        state: garantirState(novoState)
-      };
-
-    /* =========================
-       FINANÇAS — SUBTIPO
-    ========================= */
-    case 'FINANCAS_SUBTIPO': {
-      const subtipo = normalizarSubtipoConsorcio(message);
-
-      if (!subtipo) {
-        return {
-          resposta: 'Informe: Imóvel, Automóvel ou Pesados.',
-          state: garantirState(novoState)
-        };
-      }
-
-      novoState.subproduto = subtipo;
-      novoState.etapa = 'FINANCAS_MESES';
-
-      return {
-        resposta: 'Em quantos meses deseja o consórcio?',
-        state: garantirState(novoState)
-      };
-    }
-
-    /* =========================
-       FINANÇAS — MESES
-    ========================= */
-    case 'FINANCAS_MESES': {
-      const meses = parseInt(texto);
-
-      if (isNaN(meses) || meses < 12) {
-        return {
-          resposta: 'Informe um número válido de meses.',
-          state: garantirState(novoState)
-        };
-      }
-
-      novoState.meses = meses;
-      novoState.etapa = 'FINANCAS_CAMPANHA_TITULO';
-
-      return {
-        resposta: 'Qual o destaque principal da campanha?',
-        state: garantirState(novoState)
-      };
-    }
-
-    /* =========================
-       FINANÇAS — CAMPANHA
-    ========================= */
-    case 'FINANCAS_CAMPANHA_TITULO':
-      novoState.campanha = {
-        textoPrincipal: message
-      };
-
-      novoState.etapa = 'FINANCAS_CAMPANHA_AUX';
-
-      return {
-        resposta: 'Deseja adicionar um texto complementar? (ou digite "não")',
-        state: garantirState(novoState)
-      };
-
-    case 'FINANCAS_CAMPANHA_AUX':
-      if (!texto.includes('nao')) {
-        novoState.campanha.textoAuxiliar = message;
-      }
-
-      novoState.tabela = { colunas: [], linhas: [] };
-      novoState.etapa = 'FINANCAS_TABELA_COLUNAS';
-
-      return {
-        resposta: 'Informe as colunas da tabela separadas por |',
-        state: garantirState(novoState)
-      };
-
-    /* =========================
-       FINANÇAS — TABELA
-    ========================= */
-    case 'FINANCAS_TABELA_COLUNAS':
-      novoState.tabela.colunas = message
-        .split('|')
-        .map(c => c.trim())
-        .filter(Boolean);
-
-      novoState.etapa = 'FINANCAS_TABELA_LINHAS';
-
-      return {
-        resposta: 'Agora informe cada linha da tabela. Digite "ok" quando terminar.',
-        state: garantirState(novoState)
-      };
-
-    case 'FINANCAS_TABELA_LINHAS':
-      if (texto === 'ok') {
-        novoState.lances = [];
-        novoState.etapa = 'FINANCAS_LANCES';
-
-        return {
-          resposta: 'Deseja adicionar textos de lances? Digite um por vez ou "não".',
-          state: garantirState(novoState)
-        };
-      }
-
-      novoState.tabela.linhas.push(message);
-
-      return {
-        resposta: 'Linha adicionada. Digite outra ou "ok".',
-        state: garantirState(novoState)
-      };
-
-    /* =========================
-       FINANÇAS — LANCES
-    ========================= */
-    case 'FINANCAS_LANCES':
-
-      if (texto.includes('nao')) {
-        novoState.etapa = 'FINANCAS_RODAPE';
-
-        return {
-          resposta: 'Informe o texto legal do rodapé.',
-          state: garantirState(novoState)
-        };
-      }
-
-      if (texto === 'ok') {
-        novoState.etapa = 'FINANCAS_RODAPE';
-
-        return {
-          resposta: 'Informe o texto legal do rodapé.',
-          state: garantirState(novoState)
-        };
-      }
-
-      novoState.lances.push(message);
-
-      return {
-        resposta: 'Lance adicionado. Digite outro ou "ok".',
-        state: garantirState(novoState)
-      };
-
-    /* =========================
-       FINANÇAS — RODAPÉ
-    ========================= */
-    case 'FINANCAS_RODAPE':
-      novoState.rodape = message;
-      novoState.etapa = 'CONFIRMACAO';
-
-      return {
-        resposta: 'Posso gerar o flyer agora?',
-        state: garantirState(novoState)
-      };
-
-    /* =========================
-       CONFIRMAÇÃO FINAL
-    ========================= */
-    case 'CONFIRMACAO':
-
-      if (texto.includes('sim')) {
-        novoState.etapa = 'FINAL';
-
-        if (
-          novoState.area === 'confi-seguros' &&
-          novoState.subproduto === 'residencial'
-        ) {
-          const copy = gerarCopySeguroResidencial();
-          novoState.textoPrincipal = copy.textoPrincipal;
-          novoState.textoComplementar = copy.textoComplementar;
-        }
-
-        return {
-          resposta: 'Flyer confirmado. Iniciando geração.',
-          state: garantirState(novoState)
-        };
-      }
-
-      return {
-        resposta: 'Posso gerar o flyer agora?',
-        state: garantirState(novoState)
-      };
-
-    /* =========================
-       FALLBACK
-    ========================= */
-    default:
-      return {
-        resposta: 'Vamos começar novamente.',
-        state: garantirState(initialState)
-      };
+  // INÍCIO
+  if (estado.etapa === 'inicio') {
+    estado.etapa = 'area';
+    return {
+      resposta: 'Olá! Qual área deseja? Seguros, Finanças ou Benefícios?',
+      estado
+    };
   }
+
+  // ÁREA
+  if (estado.etapa === 'area') {
+    if (texto.includes('fin')) {
+      estado.area = 'financas';
+      estado.etapa = 'produto';
+      return { resposta: 'Perfeito. Qual produto? Consórcio?', estado };
+    }
+  }
+
+  // PRODUTO
+  if (estado.etapa === 'produto') {
+    estado.produto = 'consorcio';
+    estado.etapa = 'subproduto';
+    return {
+      resposta: 'Qual o tipo de consórcio? Imóvel, Automóvel ou Pesados?',
+      estado
+    };
+  }
+
+  // SUBPRODUTO
+  if (estado.etapa === 'subproduto') {
+    estado.subproduto = texto;
+    estado.etapa = 'prazo';
+    return {
+      resposta: 'Em quantos meses deseja o consórcio?',
+      estado
+    };
+  }
+
+  // PRAZO
+  if (estado.etapa === 'prazo') {
+    estado.prazo = Number(texto);
+    estado.etapa = 'campanha';
+    return {
+      resposta: 'Qual o destaque principal da campanha?',
+      estado
+    };
+  }
+
+  // CAMPANHA
+  if (estado.etapa === 'campanha') {
+    estado.campanha.textoPrincipal = texto;
+    estado.etapa = 'campanhaAux';
+    return {
+      resposta: 'Deseja um texto auxiliar? (ou digite "não")',
+      estado
+    };
+  }
+
+  if (estado.etapa === 'campanhaAux') {
+    estado.campanha.textoAuxiliar =
+      texto === 'não' ? '' : texto;
+    estado.etapa = 'tabela';
+    return {
+      resposta: 'Informe as colunas da tabela separadas por |',
+      estado
+    };
+  }
+
+  // TABELA
+  if (estado.etapa === 'tabela') {
+    estado.tabela.colunas = mensagem.split('|').map(c => c.trim());
+    estado.etapa = 'linhas';
+    return {
+      resposta: 'Informe as linhas da tabela (uma por linha)',
+      estado
+    };
+  }
+
+  if (estado.etapa === 'linhas') {
+    estado.tabela.linhas.push(mensagem);
+    if (estado.tabela.linhas.length < 4) {
+      return { resposta: 'Próxima linha:', estado };
+    }
+    estado.etapa = 'extras';
+    return { resposta: 'Informe os lances/destaques:', estado };
+  }
+
+  // EXTRAS
+  if (estado.etapa === 'extras') {
+    estado.extras.push(mensagem);
+    estado.etapa = 'rodape';
+    return { resposta: 'Informe o texto legal do rodapé:', estado };
+  }
+
+  // FINAL
+  if (estado.etapa === 'rodape') {
+    estado.rodape = mensagem;
+    estado.prontoParaGerar = true;
+    estado.etapa = 'fim';
+
+    return {
+      resposta: 'Flyer confirmado. Gerando agora.',
+      estado
+    };
+  }
+
+  return { resposta: 'Não entendi, pode repetir?', estado };
 }
